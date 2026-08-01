@@ -10,6 +10,8 @@ The repo keeps the **unpacked source charts**; every packaged chart (`.tgz`) is
 published as a **GitHub Release** (one per app/version). Icons are versioned in
 [`assets/icons/`](assets/icons) and served via jsDelivr from this repo.
 
+![Personal Olares App Catalog](assets/screenshots/olares-apps.png)
+
 ## Installing an app
 
 Each release ships the ready-to-install packaged chart (`.tgz`). To install one
