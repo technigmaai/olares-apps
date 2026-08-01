@@ -56,6 +56,9 @@ olares-cli market install <app> -s upload --version <ver> --watch
   `Dockerfile` is included for **building your own image**; alternatively use
   the prebuilt image referenced in the deployment manifest
   (`docker.io/technigmaai/pi-agent:0.80.6`).
+  **Set-up:** first run `pi` in the app terminal to create its data folder,
+  then add your LLM to `models.json` and pick the default in `settings.json`
+  under `Data/piagent/.pi/agent/` — see [piagent/README.md](piagent/README.md).
 - **Postgres Backup Local** — rotating `pg_dump` backups of one or more
   PostgreSQL databases. Targets, schedule (`cron`), retention and optional
   webhook notifications are all configurable.
