@@ -89,14 +89,14 @@ source-available terms and Outline's Business Source License.
 
 Each packaged chart is attached to a GitHub Release per app/version:
 
-| Release | Asset |
-|---|---|
-| `elasticsearch-0.0.8` | `elasticsearch-0.0.8.tgz` |
-| `nextaidrawio-0.0.8` | `nextaidrawio-0.0.8.tgz` |
-| `outlineapp-0.4.0` | `outlineapp-0.4.0.tgz` |
-| `piagent-0.1.0` | `piagent-0.1.0.tgz` |
-| `postgresbackup-1.0.5` | `postgresbackup-1.0.5.tgz` |
-| `visionbridge-0.4.1` | `visionbridge-0.4.1.tgz` |
+| Release              | Asset                    |
+|----------------------|--------------------------|
+| elasticsearch-0.0.8  | elasticsearch-0.0.8.tgz  |
+| nextaidrawio-0.0.8   | nextaidrawio-0.0.8.tgz   |
+| outlineapp-0.4.0     | outlineapp-0.4.0.tgz     |
+| piagent-0.1.0        | piagent-0.1.0.tgz        |
+| postgresbackup-1.0.5 | postgresbackup-1.0.5.tgz |
+| visionbridge-0.4.1   | visionbridge-0.4.1.tgz   |
 
 ## Layout
 
