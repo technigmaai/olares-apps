@@ -61,6 +61,30 @@ olares-cli market install <app> -s upload --version <ver> --watch
   `BRIDGE_API_KEYS` auth, advanced `EXTRA_MODELS`) is editable in the app's
   Variables.
 
+## Sources & acknowledgements
+
+These charts are community ports / wrappers of existing open-source projects.
+Each app's licensing is governed by its **upstream** project:
+
+| App | Source repository | Upstream license |
+|---|---|---|
+| elasticsearch | [elastic/elasticsearch](https://github.com/elastic/elasticsearch) | Elastic License 2.0 (or SSPL / AGPL-3.0) — source-available, **not** Apache |
+| nextaidrawio | [DayuanJiang/next-ai-draw-io](https://github.com/DayuanJiang/next-ai-draw-io) | Apache-2.0 |
+| outlineapp | [outline/outline](https://github.com/outline/outline) | Business Source License 1.1 |
+| piagent | custom chart — app is the Pi coding agent (`@earendil-works/pi-coding-agent`) | see Pi agent package |
+| postgresbackup | [prodrigestivill/docker-postgres-backup-local](https://github.com/prodrigestivill/docker-postgres-backup-local) | MIT |
+| visionbridge | [thomasunise/visionbridge](https://github.com/thomasunise/visionbridge) | MIT |
+
+## Licenses
+
+This catalog is a collection of **community ports**: the Kubernetes/Olares
+packaging (charts, manifests, Dockerfiles) here is our own work, but each app's
+underlying software belongs to its respective upstream project and is governed
+by that project's license (linked above). Nothing here is affiliated with or
+endorsed by the upstream projects. Before redistributing or reusing any app,
+review the applicable upstream license — in particular note Elasticsearch's
+source-available terms and Outline's Business Source License.
+
 ## Releases
 
 Each packaged chart is attached to a GitHub Release per app/version:
