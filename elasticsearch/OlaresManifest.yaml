@@ -6,7 +6,7 @@ metadata:
   appid: elasticsearch
   title: Elasticsearch
   description: Distributed search and analytics engine. RESTful API, full-text search, vector database.
-  icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/elasticsearch.png
+  icon: https://cdn.jsdelivr.net/gh/technigmaai/olares-apps@main/assets/icons/elasticsearch.png
   version: 0.0.8
   categories:
     - Utilities

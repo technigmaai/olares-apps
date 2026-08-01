@@ -6,7 +6,7 @@ metadata:
   appid: piagent
   title: Pi Agent
   description: AI coding agent CLI with read, bash, edit, write tools and session management
-  icon: https://app.cdn.olares.com/appstore/default/defaulticon.webp
+  icon: https://cdn.jsdelivr.net/gh/technigmaai/olares-apps@main/assets/icons/piagent.png
   version: 0.1.0
   categories:
     - Utilities

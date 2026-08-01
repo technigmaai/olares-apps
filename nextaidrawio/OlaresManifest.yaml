@@ -7,7 +7,7 @@ metadata:
   appid: nextaidrawio
   title: Next AI Draw.io
   description: AI-Powered Diagram Creation Tool - Chat, Draw, Visualize
-  icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/draw-io.png
+  icon: https://cdn.jsdelivr.net/gh/technigmaai/olares-apps@main/assets/icons/nextaidrawio.png
   version: 0.0.8
   categories:
     - Utilities

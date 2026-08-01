@@ -7,7 +7,7 @@ metadata:
   appid: outlineapp
   title: Outline
   description: A fast, collaborative knowledge base for your team
-  icon: https://github.com/outline.png
+  icon: https://cdn.jsdelivr.net/gh/technigmaai/olares-apps@main/assets/icons/outline.png
   version: 0.4.0
   categories:
     - Utilities

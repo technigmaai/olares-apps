@@ -6,7 +6,7 @@ metadata:
   appid: visionbridge
   title: VisionBridge
   description: Cross-vision OpenAI proxy that gives text-only LLMs vision through a separate VLM.
-  icon: https://app.cdn.olares.com/appstore/default/defaulticon.webp
+  icon: https://cdn.jsdelivr.net/gh/technigmaai/olares-apps@main/assets/icons/visionbridge.png
   version: 0.1.4
   categories:
     - Utilities

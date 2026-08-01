@@ -7,7 +7,7 @@ metadata:
   appid: postgresbackup
   title: Postgres Backup Local
   description: Periodic rotating PostgreSQL backups (pg_dump / pg_dumpall) stored locally, with daily/weekly/monthly retention.
-  icon: https://litter.catbox.moe/9ahts9.png
+  icon: https://cdn.jsdelivr.net/gh/technigmaai/olares-apps@main/assets/icons/postgresbackup.png
   version: 1.0.5
   categories:
     - Utilities
