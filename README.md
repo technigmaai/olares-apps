@@ -75,21 +75,6 @@ Each app's licensing is governed by its **upstream** project:
 | postgresbackup | [prodrigestivill/docker-postgres-backup-local](https://github.com/prodrigestivill/docker-postgres-backup-local) | MIT |
 | visionbridge | [thomasunise/visionbridge](https://github.com/thomasunise/visionbridge) | MIT |
 
-## Licenses
-
-This catalog is a collection of **community ports**: the Kubernetes/Olares
-packaging here (charts, manifests, Dockerfiles, icons, this repo) is **our own
-work** and is licensed under the
-[Apache License 2.0](LICENSE).
-Copyright 2026 Technigma AI.
-
-Each app's **underlying software** belongs to its respective upstream project
-and remains governed by that project's license (linked in the table above) —
-Licenses do **not** change the upstream terms. Nothing here is affiliated with
-or endorsed by the upstream projects. Before redistributing or reusing an app,
-review the applicable upstream license — in particular note Elasticsearch's
-source-available terms and Outline's Business Source License.
-
 ## Releases
 
 Each packaged chart is attached to a GitHub Release per app/version:
@@ -116,3 +101,18 @@ Each packaged chart is attached to a GitHub Release per app/version:
 ├── .gitignore           # ignores packaged *.tgz (they live on Releases)
 └── README.md
 ```
+
+## Licenses
+
+This catalog is a collection of **community ports**: the Kubernetes/Olares
+packaging here (charts, manifests, Dockerfiles, icons, this repo) is **our own
+work** and is licensed under the
+[Apache License 2.0](LICENSE).
+Copyright 2026 Technigma AI.
+
+Each app's **underlying software** belongs to its respective upstream project
+and remains governed by that project's license (linked in the table above) —
+our license does **not** change the upstream terms. Nothing here is affiliated
+with or endorsed by the upstream projects. Before redistributing or reusing an
+app, review the applicable upstream license — in particular note
+Elasticsearch's source-available terms and Outline's Business Source License.
