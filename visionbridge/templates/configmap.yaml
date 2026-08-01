@@ -4,6 +4,22 @@ metadata:
   name: visionbridge-config
   namespace: '{{ .Release.Namespace }}'
 data:
-{{- range $key, $val := .Values.olaresEnv }}
-  {{ $key }}: {{ $val | quote }}
-{{- end }}
+  REASONING_BASE_URL: '{{ .Values.olaresEnv.REASONING_BASE_URL | default "http://localhost:1234/v1" | quote }}'
+  REASONING_MODEL: '{{ .Values.olaresEnv.REASONING_MODEL | default "local-model" | quote }}'
+  VISION_BASE_URL: '{{ .Values.olaresEnv.VISION_BASE_URL | default "http://localhost:11434/v1" | quote }}'
+  VISION_MODEL: '{{ .Values.olaresEnv.VISION_MODEL | default "llava:13b" | quote }}'
+  BRIDGE_MODEL_NAME: '{{ .Values.olaresEnv.BRIDGE_MODEL_NAME | default "visionbridge" | quote }}'
+  MAX_VISION_CALLS: '{{ .Values.olaresEnv.MAX_VISION_CALLS | default "8" | quote }}'
+  REQUEST_TIMEOUT_SECONDS: '{{ .Values.olaresEnv.REQUEST_TIMEOUT_SECONDS | default "120" | quote }}'
+  ALLOW_FILE_URLS: '{{ .Values.olaresEnv.ALLOW_FILE_URLS | default "false" | quote }}'
+  ALLOW_PRIVATE_URLS: '{{ .Values.olaresEnv.ALLOW_PRIVATE_URLS | default "false" | quote }}'
+  MAX_IMAGE_BYTES: '{{ .Values.olaresEnv.MAX_IMAGE_BYTES | default "20971520" | quote }}'
+  MAX_IMAGES_PER_REQUEST: '{{ .Values.olaresEnv.MAX_IMAGES_PER_REQUEST | default "16" | quote }}'
+  TOOL_MODE: '{{ .Values.olaresEnv.TOOL_MODE | default "auto" | quote }}'
+  BACKEND_MAX_RETRIES: '{{ .Values.olaresEnv.BACKEND_MAX_RETRIES | default "2" | quote }}'
+  LOG_JSON: '{{ .Values.olaresEnv.LOG_JSON | default "false" | quote }}'
+  SCENE_PRIMING: '{{ .Values.olaresEnv.SCENE_PRIMING | default "true" | quote }}'
+  ENABLE_TRACES: '{{ .Values.olaresEnv.ENABLE_TRACES | default "true" | quote }}'
+  IMAGE_CACHE_ENTRIES: '{{ .Values.olaresEnv.IMAGE_CACHE_ENTRIES | default "64" | quote }}'
+  EXTRA_MODELS: '{{ .Values.olaresEnv.EXTRA_MODELS | default "" | quote }}'
+  EXTRA_MODELS_FILE: '{{ .Values.olaresEnv.EXTRA_MODELS_FILE | default "" | quote }}'

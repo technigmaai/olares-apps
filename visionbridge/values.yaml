@@ -3,3 +3,31 @@ workloads:
     replicaCount: 1
   terminal:
     replicaCount: 1
+
+# Defaults for the Olares-declared env vars. The Olares platform injects
+# user-edited values into .Values.olaresEnv at install; these are the fallback
+# used when a setting is left blank (matching the app's built-in defaults in
+# visionbridge/config.py). Templates also apply a `| default` guard.
+olaresEnv:
+  REASONING_BASE_URL: http://localhost:1234/v1
+  REASONING_API_KEY: local
+  REASONING_MODEL: local-model
+  VISION_BASE_URL: http://localhost:11434/v1
+  VISION_API_KEY: local
+  VISION_MODEL: llava:13b
+  BRIDGE_MODEL_NAME: visionbridge
+  MAX_VISION_CALLS: '8'
+  REQUEST_TIMEOUT_SECONDS: '120'
+  ALLOW_FILE_URLS: 'false'
+  ALLOW_PRIVATE_URLS: 'false'
+  MAX_IMAGE_BYTES: '20971520'
+  MAX_IMAGES_PER_REQUEST: '16'
+  TOOL_MODE: auto
+  BACKEND_MAX_RETRIES: '2'
+  LOG_JSON: 'false'
+  SCENE_PRIMING: 'true'
+  ENABLE_TRACES: 'true'
+  IMAGE_CACHE_ENTRIES: '64'
+  BRIDGE_API_KEYS: ''
+  EXTRA_MODELS: ''
+  EXTRA_MODELS_FILE: ''

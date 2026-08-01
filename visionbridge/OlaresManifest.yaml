@@ -7,7 +7,7 @@ metadata:
   title: VisionBridge
   description: Cross-vision OpenAI proxy that gives text-only LLMs vision through a separate VLM.
   icon: https://cdn.jsdelivr.net/gh/technigmaai/olares-apps@main/assets/icons/visionbridge.png
-  version: 0.1.4
+  version: 0.4.1
   categories:
     - Utilities
 entrances:
@@ -32,113 +32,166 @@ spec:
   requiredDisk: 100
 envs:
 - envName: REASONING_BASE_URL
-  required: true
+  required: false
+  default: http://localhost:1234/v1
   editable: true
   applyOnChange: true
   type: url
+  description: Base URL of the reasoning (text) LLM — OpenAI-compatible endpoint.
 - envName: REASONING_API_KEY
-  required: true
+  required: false
+  default: local
   editable: true
   applyOnChange: true
   type: password
+  description: API key for the reasoning endpoint.
 - envName: REASONING_MODEL
-  required: true
+  required: false
+  default: local-model
   editable: true
   applyOnChange: true
   type: string
+  description: Reasoning model name.
 - envName: VISION_BASE_URL
-  required: true
+  required: false
+  default: http://localhost:11434/v1
   editable: true
   applyOnChange: true
   type: url
+  description: Base URL of the vision (VLM) LLM — OpenAI-compatible endpoint.
 - envName: VISION_API_KEY
-  required: true
+  required: false
+  default: local
   editable: true
   applyOnChange: true
   type: password
+  description: API key for the vision endpoint.
 - envName: VISION_MODEL
-  required: true
+  required: false
+  default: llava:13b
   editable: true
   applyOnChange: true
   type: string
+  description: Vision model name.
 - envName: BRIDGE_MODEL_NAME
   required: false
   default: visionbridge
   editable: true
   applyOnChange: true
   type: string
+  description: Model name the bridge exposes to clients.
 - envName: MAX_VISION_CALLS
   required: false
   default: '8'
   editable: true
   applyOnChange: true
   type: int
+  description: Max vision calls per reasoning step.
 - envName: REQUEST_TIMEOUT_SECONDS
   required: false
   default: '120'
   editable: true
   applyOnChange: true
   type: int
-- envName: TOOL_MODE
-  required: false
-  default: auto
-  editable: true
-  applyOnChange: true
-  type: string
-- envName: SCENE_PRIMING
-  required: false
-  default: 'true'
-  editable: true
-  applyOnChange: true
-  type: bool
-- envName: ENABLE_TRACES
-  required: false
-  default: 'true'
-  editable: true
-  applyOnChange: true
-  type: bool
-- envName: IMAGE_CACHE_ENTRIES
-  required: false
-  default: '64'
-  editable: true
-  applyOnChange: true
-  type: int
+  description: Upstream request timeout in seconds.
 - envName: ALLOW_FILE_URLS
   required: false
   default: 'false'
   editable: true
   applyOnChange: true
   type: bool
+  description: Allow file:// URLs in image references.
 - envName: ALLOW_PRIVATE_URLS
   required: false
   default: 'false'
   editable: true
   applyOnChange: true
   type: bool
+  description: Allow private / internal network URLs.
 - envName: MAX_IMAGE_BYTES
   required: false
   default: '20971520'
   editable: true
   applyOnChange: true
   type: int
-- envName: MAX_IMAGE_PER_REQUEST
+  description: Max allowed image size in bytes.
+- envName: MAX_IMAGES_PER_REQUEST
   required: false
   default: '16'
   editable: true
   applyOnChange: true
   type: int
+  description: Max images allowed per request.
+- envName: TOOL_MODE
+  required: false
+  default: auto
+  editable: true
+  applyOnChange: true
+  type: string
+  options:
+  - title: Auto
+    value: auto
+  - title: Native
+    value: native
+  - title: Prompt
+    value: prompt
+  description: Tool-calling mode (auto / native / prompt).
 - envName: BACKEND_MAX_RETRIES
   required: false
   default: '2'
   editable: true
   applyOnChange: true
   type: int
+  description: Max retries for backend calls.
 - envName: LOG_JSON
   required: false
   default: 'false'
   editable: true
   applyOnChange: true
   type: bool
+  description: Emit logs in JSON format.
+- envName: SCENE_PRIMING
+  required: false
+  default: 'true'
+  editable: true
+  applyOnChange: true
+  type: bool
+  description: Prime scene context before vision calls.
+- envName: ENABLE_TRACES
+  required: false
+  default: 'true'
+  editable: true
+  applyOnChange: true
+  type: bool
+  description: Enable trace / debug output.
+- envName: IMAGE_CACHE_ENTRIES
+  required: false
+  default: '64'
+  editable: true
+  applyOnChange: true
+  type: int
+  description: Number of images kept in cache.
+- envName: BRIDGE_API_KEYS
+  required: false
+  default: ''
+  editable: true
+  applyOnChange: true
+  type: string
+  description: Comma-separated API keys clients must send to call the bridge. Empty = no auth.
+- envName: EXTRA_MODELS
+  required: false
+  default: ''
+  editable: true
+  applyOnChange: true
+  type: string
+  description: JSON object of extra model-name -> pair config.
+- envName: EXTRA_MODELS_FILE
+  required: false
+  default: ''
+  editable: true
+  applyOnChange: true
+  type: string
+  description: Path (in-container) to a JSON file with extra models.
 workloadReplicas:
   visionbridge: 1
   terminal: 1
