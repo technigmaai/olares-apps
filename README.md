@@ -50,7 +50,10 @@ olares-cli market install <app> -s upload --version <ver> --watch
   Configure the AI provider/model and API keys in the app's Variables.
 - **Outline** — a fast collaboration wiki/knowledge base with rich OIDC, Google
   and Slack sign-in options, plus SMTP, file-storage and rate-limiter settings.
-- **Pi Agent** — the Pi coding-agent CLI. Run it from the app terminal.
+- **Pi Agent** — the Pi coding-agent CLI. Run it from the app terminal. A
+  `Dockerfile` is included for **building your own image**; alternatively use
+  the prebuilt image referenced in the deployment manifest
+  (`docker.io/technigmaai/pi-agent:0.80.6`).
 - **Postgres Backup Local** — rotating `pg_dump` backups of one or more
   PostgreSQL databases. Targets, schedule (`cron`), retention and optional
   webhook notifications are all configurable.
