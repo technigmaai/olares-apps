@@ -71,7 +71,7 @@ Each app's licensing is governed by its **upstream** project:
 | elasticsearch | [elastic/elasticsearch](https://github.com/elastic/elasticsearch) | Elastic License 2.0 (or SSPL / AGPL-3.0) — source-available, **not** Apache |
 | nextaidrawio | [DayuanJiang/next-ai-draw-io](https://github.com/DayuanJiang/next-ai-draw-io) | Apache-2.0 |
 | outlineapp | [outline/outline](https://github.com/outline/outline) | Business Source License 1.1 |
-| piagent | custom chart — app is the Pi coding agent (`@earendil-works/pi-coding-agent`) | see Pi agent package |
+| piagent | [earendil-works/pi](https://github.com/earendil-works/pi) | MIT |
 | postgresbackup | [prodrigestivill/docker-postgres-backup-local](https://github.com/prodrigestivill/docker-postgres-backup-local) | MIT |
 | visionbridge | [thomasunise/visionbridge](https://github.com/thomasunise/visionbridge) | MIT |
 
