@@ -1,0 +1,65 @@
+apiVersion: v3
+olaresManifest.version: '0.12.0'
+olaresManifest.type: app
+
+metadata:
+  name: nextaidrawio
+  appid: nextaidrawio
+  title: Next AI Draw.io
+  description: AI-Powered Diagram Creation Tool - Chat, Draw, Visualize
+  icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/draw-io.png
+  version: 0.0.8
+  categories:
+    - Utilities
+
+spec:
+  versionName: "0.4.16"
+  runAsUser: true
+  requiredCpu: 0.2
+  limitedCpu: 2.0
+  requiredMemory: 256Mi
+  limitedMemory: 1Gi
+  requiredDisk: 1Gi
+
+permission: {}
+
+entrances:
+  - name: next-ai-draw-io
+    host: nextaidrawio-svc
+    port: 3000
+    title: Next AI Draw.io
+    authLevel: private
+    invisible: false
+
+options:
+  apiTimeout: 0
+  dependencies:
+    - name: olares
+      version: ">=1.12.6-0"
+      type: system
+
+workloadReplicas:
+  nextaidrawio: 1
+
+envs:
+  - envName: ADMIN_PASSWORD
+    required: true
+    type: password
+    description: Password for the admin panel at /admin to manage server settings
+  - envName: AI_PROVIDER
+    required: false
+    type: string
+    default: "bedrock"
+    description: AI provider (bedrock, openai, anthropic, google, deepseek, etc.)
+  - envName: AI_MODEL
+    required: false
+    type: string
+    description: AI model ID for the chosen provider
+  - envName: OPENAI_API_KEY
+    required: false
+    type: password
+    description: OpenAI API key (if using OpenAI provider)
+  - envName: ANTHROPIC_API_KEY
+    required: false
+    type: password
+    description: Anthropic API key (if using Anthropic provider)

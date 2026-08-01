@@ -1,0 +1,262 @@
+apiVersion: v3
+olaresManifest.version: "0.12.0"
+olaresManifest.type: app
+
+metadata:
+  name: outlineapp
+  appid: outlineapp
+  title: Outline
+  description: A fast, collaborative knowledge base for your team
+  icon: https://github.com/outline.png
+  version: 0.4.0
+  categories:
+    - Utilities
+
+spec:
+  versionName: "1.9.2"
+  runAsUser: true
+  requiredCpu: 0.5
+  limitedCpu: 3
+  requiredMemory: 512Mi
+  limitedMemory: 2Gi
+  requiredDisk: 2Gi
+
+entrances:
+  - name: outlineapp
+    host: outlineapp-svc
+    port: 8080
+    title: Outline
+    authLevel: private
+    invisible: false
+
+permission:
+  appData: true
+
+middleware:
+  postgres:
+    username: outlineapp
+    password: outlineapp
+    databases:
+      - name: outlineapp
+
+envs:
+  - envName: URL
+    description: "Public URL — set to your custom domain like https://outline.technigmaai.olares.com so all links use it"
+    editable: true
+    required: false
+  - envName: SECRET_KEY
+    description: "Generate a hex-encoded 32-byte random key. Use openssl rand -hex 32"
+    required: true
+    type: password
+    editable: true
+  - envName: UTILS_SECRET
+    description: "Generate a unique random key. Use openssl rand -hex 32"
+    required: true
+    type: password
+    editable: true
+  - envName: DEFAULT_LANGUAGE
+    description: "Default interface language"
+    default: "en_US"
+    editable: true
+  - envName: FORCE_HTTPS
+    description: "Auto-redirect to https"
+    default: "true"
+    editable: true
+    type: bool
+  - envName: PGSSLMODE
+    default: "disable"
+    editable: false
+  - envName: FILE_STORAGE
+    default: "local"
+    editable: true
+  - envName: ENABLE_UPDATES
+    default: "false"
+    editable: true
+    type: bool
+  - envName: WEB_CONCURRENCY
+    default: "2"
+    editable: true
+    type: int
+  - envName: RATE_LIMITER_ENABLED
+    default: "true"
+    editable: true
+    type: bool
+  - envName: DEBUG
+    default: ""
+    editable: true
+  - envName: LOG_LEVEL
+    default: "info"
+    editable: true
+    type: string
+    options:
+      - title: Outline
+        value: error
+      - title: Outline
+        value: warn
+      - title: Outline
+        value: info
+      - title: Outline
+        value: http
+      - title: Outline
+        value: verbose
+      - title: Outline
+        value: debug
+      - title: Outline
+        value: silly
+  - envName: OIDC_CLIENT_ID
+    description: "OIDC Client ID"
+    required: false
+    editable: true
+    applyOnChange: true
+  - envName: OIDC_CLIENT_SECRET
+    description: "OIDC Client Secret"
+    required: false
+    type: password
+    editable: true
+    applyOnChange: true
+  - envName: OIDC_AUTH_URI
+    description: "OIDC Authorization URI (for Google use: https://accounts.google.com/o/oauth2/v2/auth)"
+    required: false
+    type: url
+    default: "https://accounts.google.com/o/oauth2/v2/auth"
+    editable: true
+    applyOnChange: true
+  - envName: OIDC_TOKEN_URI
+    description: "OIDC Token URI (for Google use: https://oauth2.googleapis.com/token)"
+    required: false
+    type: url
+    default: "https://oauth2.googleapis.com/token"
+    editable: true
+    applyOnChange: true
+  - envName: OIDC_USERINFO_URI
+    description: "OIDC Userinfo URI (for Google use: https://openidconnect.googleapis.com/v1/userinfo)"
+    required: false
+    type: url
+    default: "https://openidconnect.googleapis.com/v1/userinfo"
+    editable: true
+    applyOnChange: true
+  - envName: OIDC_DISPLAY_NAME
+    description: "Display name for OIDC auth button"
+    default: "Olares"
+    editable: true
+    applyOnChange: true
+  - envName: OIDC_SCOPES
+    default: "openid profile email"
+    editable: true
+    applyOnChange: true
+  - envName: OIDC_USERNAME_CLAIM
+    default: "preferred_username"
+    editable: true
+    applyOnChange: true
+  - envName: OIDC_LOGOUT_URI
+    description: "OIDC Logout URI (optional)"
+    required: false
+    type: url
+    editable: true
+    applyOnChange: true
+  - envName: GOOGLE_CLIENT_ID
+    description: "Google OAuth Client ID"
+    required: false
+    editable: true
+    applyOnChange: true
+  - envName: GOOGLE_CLIENT_SECRET
+    description: "Google OAuth Client Secret"
+    required: false
+    type: password
+    editable: true
+    applyOnChange: true
+  - envName: SLACK_CLIENT_ID
+    description: "Slack OAuth Client ID"
+    required: false
+    editable: true
+    applyOnChange: true
+  - envName: SLACK_CLIENT_SECRET
+    description: "Slack OAuth Client Secret"
+    required: false
+    type: password
+    editable: true
+    applyOnChange: true
+  # SMTP — independent per-app settings (configure in App Settings → Edit env vars)
+  - envName: SMTP_HOST
+    description: "SMTP server hostname (e.g. smtp.gmail.com)"
+    required: false
+    editable: true
+  - envName: SMTP_PORT
+    description: "SMTP server port (default: 587)"
+    required: false
+    editable: true
+    type: int
+    default: "587"
+  - envName: SMTP_USERNAME
+    description: "SMTP username"
+    required: false
+    editable: true
+  - envName: SMTP_PASSWORD
+    description: "SMTP password"
+    required: false
+    type: password
+    editable: true
+  - envName: SMTP_FROM_EMAIL
+    description: "SMTP from email address"
+    required: false
+    type: email
+    editable: true
+  - envName: SMTP_SECURE
+    description: "Use TLS for SMTP (default: true)"
+    required: false
+    editable: true
+    type: bool
+    default: "true"
+
+  # File storage & import sizes
+  - envName: FILE_STORAGE_UPLOAD_MAX_SIZE
+    description: "Max attachment upload size in bytes (default: 250MB)"
+    required: false
+    editable: true
+    type: int
+    default: "262144000"
+  - envName: FILE_STORAGE_IMPORT_MAX_SIZE
+    description: "Max document import size in bytes (default: same as upload)"
+    required: false
+    editable: true
+    type: int
+    default: "262144000"
+  - envName: FILE_STORAGE_WORKSPACE_IMPORT_MAX_SIZE
+    description: "Max workspace import size in bytes (default: 500MB)"
+    required: false
+    editable: true
+    type: int
+    default: "524288000"
+
+  # Rate limiter
+  - envName: RATE_LIMITER_REQUESTS
+    description: "Max requests per rate limit window"
+    required: false
+    editable: true
+    type: int
+    default: "1000"
+  - envName: RATE_LIMITER_DURATION_WINDOW
+    description: "Rate limit window in seconds"
+    required: false
+    editable: true
+    type: int
+    default: "60"
+  - envName: RATE_LIMITER_MULTIPLIER
+    description: "Multiplier for per-endpoint rate limits (default: 1)"
+    required: false
+    editable: true
+    type: int
+    default: "1"
+
+options:
+  dependencies:
+    - name: olares
+      version: ">=1.12.6-0"
+      type: system
+    - name: postgres
+      version: ">=14.0.0-0"
+      type: middleware
+      mandatory: true
+
+workloadReplicas:
+  outlineapp: 1

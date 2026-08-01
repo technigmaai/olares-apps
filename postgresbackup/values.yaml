@@ -1,0 +1,5 @@
+workloads:
+  postgresbackup:
+    replicaCount: 1
+  terminal:
+    replicaCount: 1

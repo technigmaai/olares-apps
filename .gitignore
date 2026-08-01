@@ -1,0 +1,10 @@
+# Packaged charts are published as GitHub Releases, not committed
+*.tgz
+*.tar.gz
+
+# OS / editor cruft
+.DS_Store
+*.swp
+*~
+.idea/
+.vscode/

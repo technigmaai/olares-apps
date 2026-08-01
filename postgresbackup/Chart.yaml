@@ -1,0 +1,7 @@
+apiVersion: v2
+appVersion: "17"
+description: Periodic rotating PostgreSQL backups (pg_dump / pg_dumpall) to local
+  storage
+name: postgresbackup
+type: application
+version: 1.0.5

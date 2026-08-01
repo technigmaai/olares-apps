@@ -1,0 +1,106 @@
+apiVersion: v3
+olaresManifest.version: '0.12.0'
+olaresManifest.type: app
+metadata:
+  name: elasticsearch
+  appid: elasticsearch
+  title: Elasticsearch
+  description: Distributed search and analytics engine. RESTful API, full-text search, vector database.
+  icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/elasticsearch.png
+  version: 0.0.8
+  categories:
+    - Utilities
+spec:
+  versionName: "9.4.4"
+  runAsUser: true
+  requiredCpu: 0.5
+  limitedCpu: 2
+  requiredMemory: 2Gi
+  limitedMemory: 4Gi
+  requiredDisk: 5Gi
+
+# Persistent storage — data lives on JuiceFS-backed appData, visible at /drive/Data/elasticsearch/ in Files
+permission:
+  appData: true
+
+# HTTP entrance for the REST API
+entrances:
+  - name: elasticsearch
+    host: elasticsearch-svc
+    port: 9200
+    title: Elasticsearch API
+    authLevel: private
+    invisible: false
+
+# Expose the transport port for cluster communication
+ports:
+  - name: transport
+    host: elasticsearch-svc
+    port: 9300
+    protocol: tcp
+    exposePort: 19300
+
+# Configurable environment variables (visible in App Settings UI)
+envs:
+  - envName: ELASTIC_PASSWORD
+    description: "Password for the elastic superuser"
+    type: password
+    required: true
+    editable: true
+  - envName: ES_JAVA_OPTS
+    description: "JVM heap options (e.g. -Xms1g -Xmx1g)"
+    default: "-Xms1g -Xmx1g"
+    editable: true
+  - envName: ES_LICENSE_TYPE
+    description: "Elasticsearch license type"
+    default: "basic"
+    editable: true
+    options:
+      - title: "Basic (free)"
+        value: "basic"
+      - title: "Trial (all features, 30 days)"
+        value: "trial"
+  - envName: ES_SECURITY_ENABLED
+    description: "Enable/disable X-Pack security (authentication)"
+    default: "true"
+    type: bool
+    editable: true
+  - envName: ES_SSL_ENABLED
+    description: "Enable/disable HTTPS for the HTTP API"
+    default: "false"
+    type: bool
+    editable: true
+  - envName: ES_CLUSTER_NAME
+    description: "Elasticsearch cluster name"
+    default: "elasticsearch-olares"
+    editable: true
+  - envName: ES_MAX_BUCKETS
+    description: "Maximum number of aggregation buckets"
+    default: "65536"
+    type: int
+    editable: true
+  - envName: ES_DISK_WATERMARK_LOW
+    description: "Disk watermark low threshold"
+    default: "85%"
+    editable: true
+  - envName: ES_DISK_WATERMARK_HIGH
+    description: "Disk watermark high threshold"
+    default: "90%"
+    editable: true
+  - envName: ES_DISK_WATERMARK_FLOOD
+    description: "Disk watermark flood stage"
+    default: "95%"
+    editable: true
+
+# System dependency
+options:
+  dependencies:
+    - name: olares
+      version: '>=1.12.6-0'
+      type: system
+  # Disable the default 15s timeout — ES queries can take longer
+  apiTimeout: 0
+
+# Every Deployment/StatefulSet must be listed here
+workloadReplicas:
+  elasticsearch: 1

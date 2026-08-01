@@ -1,0 +1,150 @@
+apiVersion: v3
+olaresManifest.version: '0.12.0'
+olaresManifest.type: app
+metadata:
+  name: visionbridge
+  appid: visionbridge
+  title: VisionBridge
+  description: Cross-vision OpenAI proxy that gives text-only LLMs vision through a separate VLM.
+  icon: https://app.cdn.olares.com/appstore/default/defaulticon.webp
+  version: 0.1.4
+  categories:
+    - Utilities
+entrances:
+- name: terminal
+  host: terminal
+  port: 80
+  title: VisionBridge Terminal
+  openMethod: window
+- name: api
+  host: visionbridge
+  port: 8080
+  title: VisionBridge API
+  authLevel: internal
+  invisible: true
+spec:
+  versionName: '0.2.0'
+  runAsUser: true
+  requiredCpu: 0.5
+  limitedCpu: 2
+  requiredMemory: 256
+  limitedMemory: 1024
+  requiredDisk: 100
+envs:
+- envName: REASONING_BASE_URL
+  required: true
+  editable: true
+  applyOnChange: true
+  type: url
+- envName: REASONING_API_KEY
+  required: true
+  editable: true
+  applyOnChange: true
+  type: password
+- envName: REASONING_MODEL
+  required: true
+  editable: true
+  applyOnChange: true
+  type: string
+- envName: VISION_BASE_URL
+  required: true
+  editable: true
+  applyOnChange: true
+  type: url
+- envName: VISION_API_KEY
+  required: true
+  editable: true
+  applyOnChange: true
+  type: password
+- envName: VISION_MODEL
+  required: true
+  editable: true
+  applyOnChange: true
+  type: string
+- envName: BRIDGE_MODEL_NAME
+  required: false
+  default: visionbridge
+  editable: true
+  applyOnChange: true
+  type: string
+- envName: MAX_VISION_CALLS
+  required: false
+  default: '8'
+  editable: true
+  applyOnChange: true
+  type: int
+- envName: REQUEST_TIMEOUT_SECONDS
+  required: false
+  default: '120'
+  editable: true
+  applyOnChange: true
+  type: int
+- envName: TOOL_MODE
+  required: false
+  default: auto
+  editable: true
+  applyOnChange: true
+  type: string
+- envName: SCENE_PRIMING
+  required: false
+  default: 'true'
+  editable: true
+  applyOnChange: true
+  type: bool
+- envName: ENABLE_TRACES
+  required: false
+  default: 'true'
+  editable: true
+  applyOnChange: true
+  type: bool
+- envName: IMAGE_CACHE_ENTRIES
+  required: false
+  default: '64'
+  editable: true
+  applyOnChange: true
+  type: int
+- envName: ALLOW_FILE_URLS
+  required: false
+  default: 'false'
+  editable: true
+  applyOnChange: true
+  type: bool
+- envName: ALLOW_PRIVATE_URLS
+  required: false
+  default: 'false'
+  editable: true
+  applyOnChange: true
+  type: bool
+- envName: MAX_IMAGE_BYTES
+  required: false
+  default: '20971520'
+  editable: true
+  applyOnChange: true
+  type: int
+- envName: MAX_IMAGE_PER_REQUEST
+  required: false
+  default: '16'
+  editable: true
+  applyOnChange: true
+  type: int
+- envName: BACKEND_MAX_RETRIES
+  required: false
+  default: '2'
+  editable: true
+  applyOnChange: true
+  type: int
+- envName: LOG_JSON
+  required: false
+  default: 'false'
+  editable: true
+  applyOnChange: true
+  type: bool
+workloadReplicas:
+  visionbridge: 1
+  terminal: 1
+options:
+  apiTimeout: 0
+  dependencies:
+  - name: olares
+    version: '>=1.12.6-0'
+    type: system

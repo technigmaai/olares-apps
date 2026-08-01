@@ -1,0 +1,3 @@
+workloads:
+  outlineapp:
+    replicaCount: 1

@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: visionbridge-config
+  namespace: '{{ .Release.Namespace }}'
+data:
+{{- range $key, $val := .Values.olaresEnv }}
+  {{ $key }}: {{ $val | quote }}
+{{- end }}

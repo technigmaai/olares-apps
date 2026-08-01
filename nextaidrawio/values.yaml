@@ -1,0 +1,3 @@
+workloads:
+  nextaidrawio:
+    replicaCount: 1

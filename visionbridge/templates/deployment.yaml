@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: visionbridge
+  namespace: '{{ .Release.Namespace }}'
+  labels:
+    io.kompose.service: visionbridge
+spec:
+  replicas: {{ .Values.workloads.visionbridge.replicaCount }}
+  selector:
+    matchLabels:
+      io.kompose.service: visionbridge
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        io.kompose.service: visionbridge
+        bytetrade.io/terminal: visionbridge
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      enableServiceLinks: false
+      containers:
+      - name: visionbridge
+        image: technigmaai/visionbridge:0.2.0
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10

@@ -1,0 +1,118 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgresbackup
+  labels:
+    io.kompose.service: postgresbackup
+    bytetrade.io/terminal: postgresbackup
+spec:
+  replicas: {{ .Values.workloads.postgresbackup.replicaCount }}
+  selector:
+    matchLabels:
+      io.kompose.service: postgresbackup
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        io.kompose.service: postgresbackup
+        bytetrade.io/terminal: postgresbackup
+    spec:
+      enableServiceLinks: false
+      initContainers:
+        - name: fix-permissions
+          image: beclab/aboveos-busybox:1.37.0
+          command:
+            - sh
+            - -c
+            - |
+              mkdir -p "$BACKUP_DIR" && chown 1000:1000 "$BACKUP_DIR" && chmod 755 "$BACKUP_DIR"
+          env:
+            - name: BACKUP_DIR
+              value: "{{ .Values.olaresEnv.BACKUP_DIR }}"
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: backups
+              mountPath: /backups
+      containers:
+        - name: postgresbackup
+          image: "prodrigestivill/postgres-backup-local:17"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+          ports:
+            - name: health
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: POSTGRES_HOST
+              value: "{{ .Values.olaresEnv.POSTGRES_HOST }}"
+            - name: POSTGRES_PORT
+              value: "{{ .Values.olaresEnv.POSTGRES_PORT }}"
+            - name: POSTGRES_DB
+              value: "{{ .Values.olaresEnv.POSTGRES_DB }}"
+            - name: POSTGRES_USER
+              value: "{{ .Values.olaresEnv.POSTGRES_USER }}"
+            - name: POSTGRES_PASSWORD
+              value: "{{ .Values.olaresEnv.POSTGRES_PASSWORD }}"
+            - name: POSTGRES_EXTRA_OPTS
+              value: "{{ .Values.olaresEnv.POSTGRES_EXTRA_OPTS }}"
+            - name: POSTGRES_CLUSTER
+              value: "{{ .Values.olaresEnv.POSTGRES_CLUSTER }}"
+            - name: SCHEDULE
+              value: "{{ .Values.olaresEnv.SCHEDULE }}"
+            - name: BACKUP_ON_START
+              value: "{{ .Values.olaresEnv.BACKUP_ON_START }}"
+            - name: BACKUP_KEEP_DAYS
+              value: "{{ .Values.olaresEnv.BACKUP_KEEP_DAYS }}"
+            - name: BACKUP_KEEP_WEEKS
+              value: "{{ .Values.olaresEnv.BACKUP_KEEP_WEEKS }}"
+            - name: BACKUP_KEEP_MONTHS
+              value: "{{ .Values.olaresEnv.BACKUP_KEEP_MONTHS }}"
+            - name: BACKUP_KEEP_MINS
+              value: "{{ .Values.olaresEnv.BACKUP_KEEP_MINS }}"
+            - name: TZ
+              value: "{{ .Values.olaresEnv.TZ }}"
+            - name: BACKUP_DIR
+              value: "{{ .Values.olaresEnv.BACKUP_DIR }}"
+            - name: HEALTHCHECK_PORT
+              value: "8080"
+{{- if .Values.olaresEnv.WEBHOOK_URL }}
+            - name: WEBHOOK_URL
+              value: "{{ .Values.olaresEnv.WEBHOOK_URL }}"
+{{- end }}
+{{- if .Values.olaresEnv.WEBHOOK_ERROR_URL }}
+            - name: WEBHOOK_ERROR_URL
+              value: "{{ .Values.olaresEnv.WEBHOOK_ERROR_URL }}"
+{{- end }}
+{{- if .Values.olaresEnv.WEBHOOK_POST_BACKUP_URL }}
+            - name: WEBHOOK_POST_BACKUP_URL
+              value: "{{ .Values.olaresEnv.WEBHOOK_POST_BACKUP_URL }}"
+{{- end }}
+          volumeMounts:
+            - name: backups
+              mountPath: /backups
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+          livenessProbe:
+            tcpSocket:
+              port: health
+            initialDelaySeconds: 30
+            periodSeconds: 60
+          readinessProbe:
+            tcpSocket:
+              port: health
+            initialDelaySeconds: 10
+            periodSeconds: 30
+      volumes:
+        - name: backups
+          hostPath:
+            path: {{ .Values.userspace.appData }}
+            type: DirectoryOrCreate

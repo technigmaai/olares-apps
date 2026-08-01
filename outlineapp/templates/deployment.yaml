@@ -1,0 +1,261 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: outlineapp
+  labels:
+    {{- include "outlineapp.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.workloads.outlineapp.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "outlineapp.labels" . | nindent 6 }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        {{- include "outlineapp.labels" . | nindent 8 }}
+    spec:
+      enableServiceLinks: false
+      initContainers:
+        - name: fix-permissions
+          image: beclab/aboveos-busybox:1.37.0
+          command:
+            - sh
+            - -c
+            - |
+              mkdir -p /opt/data /tmp/nginx_body /tmp/nginx_proxy /tmp/nginx_fastcgi /tmp/nginx_uwsgi /tmp/nginx_scgi
+              chown -R 1000:1000 /opt/data
+              chmod 755 /opt/data
+              chmod 1777 /tmp/nginx_body /tmp/nginx_proxy /tmp/nginx_fastcgi /tmp/nginx_uwsgi /tmp/nginx_scgi
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: app-data
+              mountPath: /opt/data
+      containers:
+        - name: outlineapp
+          image: "outlinewiki/outline:1.9.2-0"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            # Database
+            - name: DATABASE_URL
+              value: "postgres://{{ .Values.postgres.username }}:{{ .Values.postgres.password }}@{{ .Values.postgres.host }}:{{ .Values.postgres.port }}/{{ .Values.postgres.databases.outlineapp }}"
+            - name: PGSSLMODE
+              value: "{{ .Values.olaresEnv.PGSSLMODE }}"
+
+            # Redis (sidecar — real Redis container running in the same pod)
+            - name: REDIS_URL
+              value: "redis://localhost:6379"
+
+            # App config
+            - name: URL
+              value: "{{ .Values.olaresEnv.URL | default (printf "https://%s" .Values.domain.outlineapp) }}"
+            - name: SECRET_KEY
+              value: "{{ .Values.olaresEnv.SECRET_KEY }}"
+            - name: UTILS_SECRET
+              value: "{{ .Values.olaresEnv.UTILS_SECRET }}"
+            - name: DEFAULT_LANGUAGE
+              value: "{{ .Values.olaresEnv.DEFAULT_LANGUAGE }}"
+            - name: FORCE_HTTPS
+              value: "{{ .Values.olaresEnv.FORCE_HTTPS }}"
+            - name: FILE_STORAGE
+              value: "{{ .Values.olaresEnv.FILE_STORAGE }}"
+            - name: FILE_STORAGE_LOCAL_ROOT_DIR
+              value: "/opt/data"
+            - name: ENABLE_UPDATES
+              value: "{{ .Values.olaresEnv.ENABLE_UPDATES }}"
+            - name: WEB_CONCURRENCY
+              value: "{{ .Values.olaresEnv.WEB_CONCURRENCY }}"
+            - name: RATE_LIMITER_ENABLED
+              value: "{{ .Values.olaresEnv.RATE_LIMITER_ENABLED }}"
+            - name: DEBUG
+              value: "{{ .Values.olaresEnv.DEBUG }}"
+            - name: LOG_LEVEL
+              value: "{{ .Values.olaresEnv.LOG_LEVEL }}"
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "3000"
+            - name: HOME
+              value: "/opt/data"
+            - name: MALLOC_ARENA_MAX
+              value: "2"
+
+            # File storage & import sizes
+            - name: FILE_STORAGE_UPLOAD_MAX_SIZE
+              value: "{{ .Values.olaresEnv.FILE_STORAGE_UPLOAD_MAX_SIZE | default "262144000" }}"
+            - name: FILE_STORAGE_IMPORT_MAX_SIZE
+              value: "{{ .Values.olaresEnv.FILE_STORAGE_IMPORT_MAX_SIZE | default "262144000" }}"
+            - name: FILE_STORAGE_WORKSPACE_IMPORT_MAX_SIZE
+              value: "{{ .Values.olaresEnv.FILE_STORAGE_WORKSPACE_IMPORT_MAX_SIZE | default "524288000" }}"
+
+            # Rate limiter
+            - name: RATE_LIMITER_REQUESTS
+              value: "{{ .Values.olaresEnv.RATE_LIMITER_REQUESTS | default "1000" }}"
+            - name: RATE_LIMITER_DURATION_WINDOW
+              value: "{{ .Values.olaresEnv.RATE_LIMITER_DURATION_WINDOW | default "60" }}"
+            - name: RATE_LIMITER_MULTIPLIER
+              value: "{{ .Values.olaresEnv.RATE_LIMITER_MULTIPLIER | default "1" }}"
+
+            # OIDC auth
+            - name: OIDC_CLIENT_ID
+              value: "{{ .Values.olaresEnv.OIDC_CLIENT_ID }}"
+            - name: OIDC_CLIENT_SECRET
+              value: "{{ .Values.olaresEnv.OIDC_CLIENT_SECRET }}"
+            - name: OIDC_AUTH_URI
+              value: "{{ .Values.olaresEnv.OIDC_AUTH_URI | default "https://accounts.google.com/o/oauth2/v2/auth" }}"
+            - name: OIDC_TOKEN_URI
+              value: "{{ .Values.olaresEnv.OIDC_TOKEN_URI | default "https://oauth2.googleapis.com/token" }}"
+            - name: OIDC_USERINFO_URI
+              value: "{{ .Values.olaresEnv.OIDC_USERINFO_URI | default "https://openidconnect.googleapis.com/v1/userinfo" }}"
+            - name: OIDC_DISPLAY_NAME
+              value: "{{ .Values.olaresEnv.OIDC_DISPLAY_NAME }}"
+            - name: OIDC_SCOPES
+              value: "{{ .Values.olaresEnv.OIDC_SCOPES }}"
+            - name: OIDC_USERNAME_CLAIM
+              value: "{{ .Values.olaresEnv.OIDC_USERNAME_CLAIM }}"
+            - name: OIDC_LOGOUT_URI
+              value: "{{ .Values.olaresEnv.OIDC_LOGOUT_URI }}"
+
+            # Google OAuth
+            - name: GOOGLE_CLIENT_ID
+              value: "{{ .Values.olaresEnv.GOOGLE_CLIENT_ID }}"
+            - name: GOOGLE_CLIENT_SECRET
+              value: "{{ .Values.olaresEnv.GOOGLE_CLIENT_SECRET }}"
+
+            # Slack OAuth
+            - name: SLACK_CLIENT_ID
+              value: "{{ .Values.olaresEnv.SLACK_CLIENT_ID }}"
+            - name: SLACK_CLIENT_SECRET
+              value: "{{ .Values.olaresEnv.SLACK_CLIENT_SECRET }}"
+
+            # SMTP
+            - name: SMTP_HOST
+              value: "{{ .Values.olaresEnv.SMTP_HOST | default "" }}"
+            - name: SMTP_PORT
+              value: "{{ .Values.olaresEnv.SMTP_PORT | default "587" }}"
+            - name: SMTP_USERNAME
+              value: "{{ .Values.olaresEnv.SMTP_USERNAME }}"
+            - name: SMTP_PASSWORD
+              value: "{{ .Values.olaresEnv.SMTP_PASSWORD }}"
+            - name: SMTP_FROM_EMAIL
+              value: "{{ .Values.olaresEnv.SMTP_FROM_EMAIL }}"
+            - name: SMTP_SECURE
+              value: "{{ .Values.olaresEnv.SMTP_SECURE | default "true" }}"
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "2"
+              memory: "1Gi"
+
+          volumeMounts:
+            - name: app-data
+              mountPath: /opt/data
+
+          livenessProbe:
+            httpGet:
+              path: /_health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+
+          readinessProbe:
+            httpGet:
+              path: /_health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            timeoutSeconds: 5
+
+          startupProbe:
+            httpGet:
+              path: /_health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 30
+
+        - name: nginx
+          image: "nginx:stable-alpine3.24"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "32Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /_health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+        - name: redis
+          image: "redis:7-alpine"
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--save"
+            - ""
+            - "--appendonly"
+            - "no"
+            - "--stop-writes-on-bgsave-error"
+            - "no"
+          ports:
+            - name: redis
+              containerPort: 6379
+              protocol: TCP
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          livenessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: app-data
+          hostPath:
+            path: {{ .Values.userspace.appData }}
+            type: DirectoryOrCreate
+        - name: nginx-config
+          configMap:
+            name: nginx-config
+            items:
+              - key: nginx.conf
+                path: nginx.conf

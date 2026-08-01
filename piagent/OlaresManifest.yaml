@@ -1,0 +1,42 @@
+apiVersion: v3
+olaresManifest.version: '0.12.0'
+olaresManifest.type: app
+metadata:
+  name: piagent
+  appid: piagent
+  title: Pi Agent
+  description: AI coding agent CLI with read, bash, edit, write tools and session management
+  icon: https://app.cdn.olares.com/appstore/default/defaulticon.webp
+  version: 0.1.0
+  categories:
+    - Utilities
+spec:
+  versionName: "0.80.6"
+  runAsUser: true
+  limitedCpu: "4"
+  limitedMemory: 4Gi
+  requiredCpu: 200m
+  requiredMemory: 256Mi
+  requiredDisk: 5Gi
+permission:
+  appData: true
+  appCache: true
+  userData:
+  - Home
+entrances:
+  - name: terminal
+    host: terminal
+    port: 80
+    title: Pi Agent Terminal
+    openMethod: window
+    authLevel: private
+    invisible: false
+options:
+  apiTimeout: 0
+  dependencies:
+    - name: olares
+      version: '>=1.12.6-0'
+      type: system
+workloadReplicas:
+  piagent: 1
+  terminal: 1

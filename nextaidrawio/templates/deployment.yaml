@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextaidrawio
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: nextaidrawio
+spec:
+  replicas: {{ .Values.workloads.nextaidrawio.replicaCount }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: nextaidrawio
+  template:
+    metadata:
+      labels:
+        app: nextaidrawio
+    spec:
+      enableServiceLinks: false
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      initContainers:
+        - name: fix-permissions
+          image: beclab/aboveos-busybox:1.37.0
+          command:
+            - sh
+            - -c
+            - mkdir -p /data && chown -R 1000:1000 /data
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: app-data
+              mountPath: /data
+      containers:
+        - name: nextaidrawio
+          image: technigmaai/next-ai-draw-io:0.4.16-olares
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+              name: http
+          env:
+            - name: HOME
+              value: /app
+            - name: HOSTNAME
+              value: "0.0.0.0"
+            - name: PORT
+              value: "3000"
+            - name: NODE_ENV
+              value: production
+            - name: NEXT_TELEMETRY_DISABLED
+              value: "1"
+            - name: SETTINGS_FILE
+              value: "/data/settings.json"
+            - name: NEXT_PUBLIC_DRAWIO_BASE_URL
+              value: "https://embed.diagrams.net"
+            - name: NEXT_PUBLIC_SELFHOSTED
+              value: "true"
+            - name: AI_PROVIDER
+              value: "{{ .Values.olaresEnv.AI_PROVIDER }}"
+            - name: AI_MODEL
+              value: "{{ .Values.olaresEnv.AI_MODEL }}"
+            - name: ADMIN_PASSWORD
+              value: "{{ .Values.olaresEnv.ADMIN_PASSWORD }}"
+            - name: OPENAI_API_KEY
+              value: "{{ .Values.olaresEnv.OPENAI_API_KEY }}"
+            - name: ANTHROPIC_API_KEY
+              value: "{{ .Values.olaresEnv.ANTHROPIC_API_KEY }}"
+            - name: NEXT_PUBLIC_SHOW_ABOUT_AND_NOTICE
+              value: "false"
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 2000m
+              memory: 1Gi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - name: app-data
+              mountPath: /data
+      volumes:
+        - name: app-data
+          hostPath:
+            path: {{ .Values.userspace.appData }}/nextaidrawio/data
+            type: DirectoryOrCreate

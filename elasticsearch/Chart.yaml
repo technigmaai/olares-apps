@@ -1,0 +1,6 @@
+apiVersion: v2
+name: elasticsearch
+description: Elasticsearch - distributed search and analytics engine
+type: application
+version: 0.0.8
+appVersion: "9.4.4"

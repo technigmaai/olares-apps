@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: piagent
+  namespace: '{{ .Release.Namespace }}'
+  labels:
+    io.kompose.service: piagent
+spec:
+  replicas: {{ .Values.workloads.piagent.replicaCount }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      io.kompose.service: piagent
+  template:
+    metadata:
+      labels:
+        io.kompose.service: piagent
+        bytetrade.io/terminal: piagent
+    spec:
+      enableServiceLinks: false
+      initContainers:
+      - name: fix-permissions
+        image: beclab/aboveos-busybox:1.37.0
+        command: ["sh", "-c", "chown -R 1000:1000 /opt/data"]
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /opt/data
+          name: app-data
+      containers:
+      - name: piagent
+        image: docker.io/technigmaai/pi-agent:0.80.6
+        imagePullPolicy: Always
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          allowPrivilegeEscalation: false
+          capabilities: { drop: ["ALL"] }
+        env:
+        - name: HOME
+          value: /opt/data
+        command:
+          - sh
+          - -c
+          - |
+            echo "Pi Agent ready. Open the terminal and run 'pi'."
+            tail -f /dev/null
+        workingDir: /opt/data
+        resources:
+          requests: { cpu: 200m, memory: 256Mi }
+          limits: { cpu: "4", memory: 4Gi }
+        volumeMounts:
+        - mountPath: /opt/data
+          name: app-data
+      volumes:
+      - name: app-data
+        hostPath:
+          path: {{ .Values.userspace.appData }}
+          type: DirectoryOrCreate

@@ -1,0 +1,134 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch
+  labels:
+    app.kubernetes.io/name: elasticsearch
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.workloads.elasticsearch.replicaCount }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: elasticsearch
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: elasticsearch
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      enableServiceLinks: false
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      initContainers:
+        - name: fix-permissions
+          image: beclab/aboveos-busybox:1.37.0
+          command:
+            - sh
+            - -c
+            - |
+              mkdir -p /opt/data /opt/data/logs
+              chown -R 1000:1000 /opt/data
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: app-data
+              mountPath: /opt/data
+      containers:
+        - name: elasticsearch
+          image: "{{ .Values.elasticsearch.image.registry }}/{{ .Values.elasticsearch.image.repository }}:{{ .Values.elasticsearch.image.tag }}"
+          imagePullPolicy: {{ .Values.elasticsearch.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 9200
+              protocol: TCP
+            - name: transport
+              containerPort: 9300
+              protocol: TCP
+          env:
+            - name: discovery.type
+              value: "single-node"
+            - name: node.name
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: xpack.security.enabled
+              value: "{{ .Values.olaresEnv.ES_SECURITY_ENABLED | default .Values.elasticsearch.security.enabled | default "true" }}"
+            - name: xpack.security.http.ssl.enabled
+              value: "{{ .Values.olaresEnv.ES_SSL_ENABLED | default "false" }}"
+            - name: ELASTIC_PASSWORD
+              value: "{{ .Values.olaresEnv.ELASTIC_PASSWORD | default .Values.elasticsearch.security.password | default "changeme" }}"
+            - name: xpack.license.self_generated.type
+              value: "{{ .Values.olaresEnv.ES_LICENSE_TYPE | default .Values.elasticsearch.licenseType | default "basic" }}"
+            - name: ES_JAVA_OPTS
+              value: "{{ .Values.olaresEnv.ES_JAVA_OPTS | default .Values.elasticsearch.javaOpts | default "-Xms1g -Xmx1g" }}"
+            - name: cluster.routing.allocation.disk.watermark.low
+              value: "{{ .Values.olaresEnv.ES_DISK_WATERMARK_LOW | default .Values.elasticsearch.diskWatermarkLow | default "85%" }}"
+            - name: cluster.routing.allocation.disk.watermark.high
+              value: "{{ .Values.olaresEnv.ES_DISK_WATERMARK_HIGH | default .Values.elasticsearch.diskWatermarkHigh | default "90%" }}"
+            - name: cluster.routing.allocation.disk.watermark.flood_stage
+              value: "{{ .Values.olaresEnv.ES_DISK_WATERMARK_FLOOD | default .Values.elasticsearch.diskWatermarkFloodStage | default "95%" }}"
+            - name: cluster.name
+              value: "{{ .Values.olaresEnv.ES_CLUSTER_NAME | default "elasticsearch-olares" }}"
+            - name: search.max_buckets
+              value: "{{ .Values.olaresEnv.ES_MAX_BUCKETS | default "65536" }}"
+            - name: bootstrap.memory_lock
+              value: "{{ .Values.elasticsearch.bootstrapMemoryLock }}"
+            # Store data on the Olares appData volume (visible at /drive/Data/elasticsearch/)
+            - name: path.data
+              value: /opt/data
+            - name: path.logs
+              value: /opt/data/logs
+          volumeMounts:
+            - name: app-data
+              mountPath: /opt/data
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - |
+                  PWD="{{ .Values.olaresEnv.ELASTIC_PASSWORD | default .Values.elasticsearch.security.password | default "changeme" }}"
+                  AUTH="{{ .Values.olaresEnv.ES_SECURITY_ENABLED | default .Values.elasticsearch.security.enabled | default "true" }}"
+                  if [ "$AUTH" = "true" ]; then
+                    curl --noproxy '*' --output /dev/null --silent --head --fail -u "elastic:$PWD" http://localhost:9200
+                  else
+                    curl --noproxy '*' --output /dev/null --silent --head --fail http://localhost:9200
+                  fi
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - |
+                  PWD="{{ .Values.olaresEnv.ELASTIC_PASSWORD | default .Values.elasticsearch.security.password | default "changeme" }}"
+                  AUTH="{{ .Values.olaresEnv.ES_SECURITY_ENABLED | default .Values.elasticsearch.security.enabled | default "true" }}"
+                  if [ "$AUTH" = "true" ]; then
+                    curl --noproxy '*' --output /dev/null --silent --head --fail -u "elastic:$PWD" http://localhost:9200
+                  else
+                    curl --noproxy '*' --output /dev/null --silent --head --fail http://localhost:9200
+                  fi
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 500m
+              memory: 2Gi
+            limits:
+              cpu: 2
+              memory: 4Gi
+          securityContext:
+            capabilities:
+              add:
+                - IPC_LOCK
+      volumes:
+        - name: app-data
+          hostPath:
+            path: {{ .Values.userspace.appData }}
+            type: DirectoryOrCreate

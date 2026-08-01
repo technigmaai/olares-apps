@@ -1,0 +1,35 @@
+# Elasticsearch for Olares — default values
+# Override at install via --set or --values
+
+# Replica count (single-node ES, always 1)
+workloads:
+  elasticsearch:
+    replicaCount: 1
+
+# Elasticsearch configuration
+elasticsearch:
+  image:
+    registry: docker.elastic.co
+    repository: elasticsearch/elasticsearch
+    tag: "9.4.4"
+    pullPolicy: IfNotPresent
+
+  # JVM heap size
+  javaOpts: "-Xms1g -Xmx1g"
+
+  # Security
+  security:
+    enabled: true
+    password: "changeme"
+    sslEnabled: false
+
+  # License type: basic | trial | gold | platinum | enterprise
+  licenseType: basic
+
+  # Disk watermarks
+  diskWatermarkLow: "85%"
+  diskWatermarkHigh: "90%"
+  diskWatermarkFloodStage: "95%"
+
+  # Bootstrap memory lock (requires ulimits)
+  bootstrapMemoryLock: true

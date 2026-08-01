@@ -1,0 +1,145 @@
+apiVersion: v3
+olaresManifest.version: "0.12.0"
+olaresManifest.type: app
+
+metadata:
+  name: postgresbackup
+  appid: postgresbackup
+  title: Postgres Backup Local
+  description: Periodic rotating PostgreSQL backups (pg_dump / pg_dumpall) stored locally, with daily/weekly/monthly retention.
+  icon: https://litter.catbox.moe/9ahts9.png
+  version: 1.0.5
+  categories:
+    - Utilities
+
+spec:
+  versionName: "17"
+  runAsUser: true
+  requiredCpu: 0.1
+  limitedCpu: 1
+  requiredMemory: 256Mi
+  limitedMemory: 1Gi
+  requiredDisk: 5Gi
+
+permission:
+  appData: true
+
+entrances:
+  - name: terminal
+    host: terminal
+    port: 80
+    title: Postgres Backup Terminal
+    openMethod: window
+    authLevel: private
+    invisible: false
+  - name: healthcheck
+    host: postgresbackup-svc
+    port: 8080
+    title: Backup Healthcheck
+    authLevel: internal
+    invisible: true
+
+envs:
+  - envName: POSTGRES_HOST
+    description: "Hostname or IP of the PostgreSQL server to back up"
+    required: true
+    editable: true
+    applyOnChange: true
+  - envName: POSTGRES_PORT
+    description: "PostgreSQL server port"
+    default: "5432"
+    type: int
+    editable: true
+    applyOnChange: true
+  - envName: POSTGRES_DB
+    description: "Database(s) to back up — comma or space separated for MULTIPLE databases, e.g. appdb1, appdb2 or appdb1 appdb2"
+    required: true
+    editable: true
+    applyOnChange: true
+  - envName: POSTGRES_USER
+    description: "PostgreSQL user for the backup connection"
+    required: true
+    editable: true
+    applyOnChange: true
+  - envName: POSTGRES_PASSWORD
+    description: "PostgreSQL password for the backup connection"
+    required: true
+    type: password
+    editable: true
+    applyOnChange: true
+  - envName: POSTGRES_EXTRA_OPTS
+    description: "Extra pg_dump options (leave default unless you know what you are doing)"
+    default: "-Z1"
+    editable: true
+    applyOnChange: true
+  - envName: POSTGRES_CLUSTER
+    description: "Set TRUE to use pg_dumpall (cluster/global dump) instead of per-database pg_dump"
+    default: "FALSE"
+    editable: true
+    applyOnChange: true
+  - envName: SCHEDULE
+    description: "Cron schedule for backups, e.g. @daily, @hourly, or 0 2 * * *"
+    default: "@daily"
+    editable: true
+    applyOnChange: true
+  - envName: BACKUP_DIR
+    description: "Directory (inside the app's Data volume) where backups are stored. Default /backups; you may pick a subfolder e.g. /backups/production"
+    default: "/backups"
+    editable: true
+    applyOnChange: true
+  - envName: BACKUP_ON_START
+    description: "Set TRUE to run one backup immediately on each container start"
+    default: "FALSE"
+    editable: true
+    applyOnChange: true
+  - envName: BACKUP_KEEP_DAYS
+    description: "Number of daily backups to keep"
+    default: "7"
+    type: int
+    editable: true
+    applyOnChange: true
+  - envName: BACKUP_KEEP_WEEKS
+    description: "Number of weekly backups to keep"
+    default: "4"
+    type: int
+    editable: true
+    applyOnChange: true
+  - envName: BACKUP_KEEP_MONTHS
+    description: "Number of monthly backups to keep"
+    default: "6"
+    type: int
+    editable: true
+    applyOnChange: true
+  - envName: BACKUP_KEEP_MINS
+    description: "Minutes of 'last' backups to keep before cleanup"
+    default: "1440"
+    type: int
+    editable: true
+    applyOnChange: true
+  - envName: TZ
+    description: "Timezone used to evaluate the schedule (e.g. Europe/Paris)"
+    default: "UTC"
+    editable: true
+    applyOnChange: true
+  - envName: WEBHOOK_URL
+    description: "Optional webhook called after every backup or error"
+    editable: true
+    applyOnChange: true
+  - envName: WEBHOOK_ERROR_URL
+    description: "Optional webhook called only when a backup fails"
+    editable: true
+    applyOnChange: true
+  - envName: WEBHOOK_POST_BACKUP_URL
+    description: "Optional webhook called only after a successful backup"
+    editable: true
+    applyOnChange: true
+
+options:
+  dependencies:
+    - name: olares
+      version: ">=1.12.6-0"
+      type: system
+
+workloadReplicas:
+  postgresbackup: 1
+  terminal: 1

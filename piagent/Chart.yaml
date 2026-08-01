@@ -1,0 +1,6 @@
+apiVersion: v2
+name: piagent
+description: Pi AI coding agent running in Olares
+type: application
+version: 0.1.0
+appVersion: "0.80.6"

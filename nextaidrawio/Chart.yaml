@@ -1,0 +1,6 @@
+apiVersion: v2
+name: nextaidrawio
+version: 0.0.8
+appVersion: "0.4.16"
+description: AI-Powered Diagram Creation Tool - Chat, Draw, Visualize
+type: application
