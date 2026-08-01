@@ -1,4 +1,4 @@
-# olares-apps
+# Personal Olares App Catalog
 
 A personal collection of Olares application charts (OAC) I've developed and
 ported. Each app is a top-level folder containing the unpacked Helm chart
@@ -9,6 +9,26 @@ repository.
 The repo keeps the **unpacked source charts**; every packaged chart (`.tgz`) is
 published as a **GitHub Release** (one per app/version). Icons are versioned in
 [`assets/icons/`](assets/icons) and served via jsDelivr from this repo.
+
+## Installing an app
+
+Each release ships the ready-to-install packaged chart (`.tgz`). To install one
+on your own Olares:
+
+```bash
+# 1. pull a package
+wget https://github.com/technigmaai/olares-apps/releases/download/<app>-<ver>/<app>-<ver>.tgz
+
+# 2. land it in your Olares' Local Sources (upload bucket)
+olares-cli market upload ./<app>-<ver>.tgz
+
+# 3. install it (add -s upload for locally-uploaded charts)
+olares-cli market install <app> -s upload --version <ver> --watch
+```
+
+> Most apps expose editable settings via the Olares app → **Variables** page
+> (e.g. API keys, endpoints, schedules). The chart reads those at install and
+> applies changes with `applyOnChange`.
 
 ## Applications
 
