@@ -1,0 +1,72 @@
+olaresManifest.version: '0.12.0'
+olaresManifest.type: app
+apiVersion: v3
+metadata:
+  name: deepseekharness
+  appid: deepseekharness
+  title: DeepSeek Harness
+  description: DeepSeek Harness (DSH) — agentic coding environment with Caddy web login and rate limiting
+  icon: https://cdn.jsdelivr.net/gh/technigmaai/olares-apps@main/assets/icons/deepseekharness.png
+  version: 0.1.1
+  categories:
+    - Developer Tools
+spec:
+  versionName: "0.1.2-alpha.4"
+  runAsUser: true
+  requiredCpu: 200m
+  limitedCpu: "4"
+  requiredMemory: 1Gi
+  limitedMemory: 4Gi
+  requiredDisk: 5Gi
+  limitedDisk: 20Gi
+  supportArch:
+  - amd64
+  - arm64
+permission:
+  appData: true
+  userData:
+  - Home
+entrances:
+  - name: deepseekharness
+    host: deepseekharness
+    port: 8080
+    title: DeepSeek Harness
+    openMethod: window
+    authLevel: private
+    invisible: false
+options:
+  # DSH uses long-lived WebSockets (terminals) and LLM streams; disable the
+  # entrance proxy request cap so they are not cut at 15s.
+  apiTimeout: 0
+  dependencies:
+    - name: olares
+      version: '>=1.12.6-0'
+      type: system
+envs:
+  - envName: AUTH_PASSWORD
+    required: true
+    type: password
+    regex: '^.{12,}$'
+    editable: true
+    applyOnChange: true
+    description: Login password for DeepSeek Harness (at least 12 characters). Only used when AUTH_MODE is caddy-security (the default).
+  - envName: AUTH_USERNAME
+    default: admin
+    editable: true
+    description: Login username for DeepSeek Harness
+  - envName: AUTH_MODE
+    default: caddy-security
+    options:
+      - title: Built-in login (caddy-security)
+        value: caddy-security
+      - title: No built-in login (Olares SSO only)
+        value: none
+    editable: true
+    description: Authentication mode. caddy-security adds the image's own login form and brute-force rate limiting. none delegates authentication to the Olares gateway (single login).
+  - envName: AUTH_TOKEN_LIFETIME
+    default: "3600"
+    type: int
+    editable: true
+    description: Access token and cookie lifetime in seconds (300-2592000)
+workloadReplicas:
+  deepseekharness: 1

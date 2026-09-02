@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deepseekharness
+  namespace: '{{ .Release.Namespace }}'
+  labels:
+    app: deepseekharness
+spec:
+  replicas: {{ .Values.workloads.deepseekharness.replicaCount }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: deepseekharness
+  template:
+    metadata:
+      labels:
+        app: deepseekharness
+    spec:
+      enableServiceLinks: false
+      initContainers:
+      - name: fix-permissions
+        image: beclab/aboveos-busybox:1.37.0
+        command: ["sh", "-c", "chown 1000:1000 /data /home/node /workspace"]
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: home
+          mountPath: /home/node
+        - name: workspace
+          mountPath: /workspace
+      containers:
+      - name: deepseekharness
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        env:
+        - name: PUBLIC_URL
+          value: "https://{{ .Values.domain.deepseekharness }}"
+        - name: AUTH_PASSWORD
+          value: "{{ .Values.olaresEnv.AUTH_PASSWORD }}"
+        - name: AUTH_USERNAME
+          value: "{{ .Values.olaresEnv.AUTH_USERNAME }}"
+        - name: AUTH_MODE
+          value: "{{ .Values.olaresEnv.AUTH_MODE }}"
+        - name: AUTH_TOKEN_LIFETIME
+          value: "{{ .Values.olaresEnv.AUTH_TOKEN_LIFETIME }}"
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          exec:
+            command: ["/usr/local/bin/healthcheck.sh"]
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 12
+        livenessProbe:
+          exec:
+            command: ["/usr/local/bin/healthcheck.sh"]
+          initialDelaySeconds: 30
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 5
+        resources:
+          requests:
+            cpu: 200m
+            memory: 1Gi
+          limits:
+            cpu: "4"
+            memory: 4Gi
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: home
+          mountPath: /home/node
+        - name: workspace
+          mountPath: /workspace
+      volumes:
+      - name: data
+        hostPath:
+          path: {{ .Values.userspace.appData }}
+          type: DirectoryOrCreate
+      - name: home
+        hostPath:
+          path: {{ .Values.userspace.userData }}
+          type: Directory
+      - name: workspace
+        hostPath:
+          path: {{ .Values.userspace.userData }}/Code
+          type: Directory
