@@ -27,7 +27,7 @@ root images and `gosu` cannot switch users without root, so the fork:
 |---|---|---|
 | `/data` | `appData` | Caddy config/certs, auth DB, JWT signing key, DSH state |
 | `/home/node` | `userData` (Home) | Persistent HOME — user-installed pnpm/pipx/Go tools |
-| `/workspace` | `userData/Code` | Project workspace (DSH `DSH_WORKSPACE`) |
+| `/workspace` | `appData/workspaces` | Workspace parent — each DSH workspace is a subfolder (`Data/deepseekharness/workspaces/<name>`) |
 
 ## Variables
 

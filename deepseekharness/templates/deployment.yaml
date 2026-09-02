@@ -95,5 +95,5 @@ spec:
           type: Directory
       - name: workspace
         hostPath:
-          path: {{ .Values.userspace.userData }}/Code
-          type: Directory
+          path: {{ .Values.userspace.appData }}/workspaces
+          type: DirectoryOrCreate
