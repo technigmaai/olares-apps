@@ -82,6 +82,7 @@ Each app's licensing is governed by its **upstream** project:
 
 | App | Source repository | Upstream license |
 |---|---|---|
+| deepseekharness | [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) | MIT (image built by [okxlin/release-factory](https://github.com/okxlin/release-factory)) |
 | elasticsearch | [elastic/elasticsearch](https://github.com/elastic/elasticsearch) | Elastic License 2.0 (or SSPL / AGPL-3.0) — source-available, **not** Apache |
 | nextaidrawio | [DayuanJiang/next-ai-draw-io](https://github.com/DayuanJiang/next-ai-draw-io) | Apache-2.0 |
 | outlineapp | [outline/outline](https://github.com/outline/outline) | Business Source License 1.1 |
