@@ -16,6 +16,7 @@ spec:
     metadata:
       labels:
         app: deepseekharness
+        bytetrade.io/terminal: deepseekharness
     spec:
       enableServiceLinks: false
       initContainers:

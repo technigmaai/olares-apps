@@ -1,6 +1,8 @@
 workloads:
   deepseekharness:
     replicaCount: 1
+  terminal:
+    replicaCount: 1
 
 image:
   # Thin Olares fork of moelin/deepseek-harness (patched entrypoint, uid 1000)
