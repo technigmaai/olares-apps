@@ -36,7 +36,7 @@ olares-cli market install <app> -s upload --version <ver> --watch
 
 | App | Title | Chart ver | App ver | Category | What it is |
 |---|---|---|---|---|---|
-| [deepseekharness](./deepseekharness) | DeepSeek Harness | 0.1.1 | 0.1.2-alpha.4 | Developer Tools | Agentic coding environment with Caddy web login (DSH + workstation toolchain) |
+| [deepseekharness](./deepseekharness) | DeepSeek Harness | 0.1.3 | 0.1.2-alpha.4 | Developer Tools | Agentic coding environment with Caddy web login (DSH + workstation toolchain) |
 | [elasticsearch](./elasticsearch) | Elasticsearch | 0.0.8 | 9.4.4 | Utilities | Distributed search & analytics engine (REST API, full-text search) |
 | [nextaidrawio](./nextaidrawio) | Next AI Draw.io | 0.0.8 | 0.4.16 | Utilities | AI-powered diagramming — chat, draw, visualize |
 | [outlineapp](./outlineapp) | Outline | 0.4.0 | 1.9.2 | Productivity | Fast, collaborative knowledge base / wiki for your team |
@@ -51,7 +51,7 @@ olares-cli market install <app> -s upload --version <ver> --watch
   image via a thin Olares fork (`docker.io/technigmaai/deepseek-harness`)
   that runs as uid 1000. Set the login password in the app's Variables
   (`AUTH_PASSWORD`); `AUTH_MODE=none` switches to Olares-SSO-only login.
-  State in `Data/deepseekharness`, workspace in `Home/Code`.
+  State in `Data/deepseekharness`, workspaces under `Data/deepseekharness/workspaces`.
 - **Elasticsearch** — the official Elasticsearch engine (single node) packaged
   as an Olares app. Security, SSL, license type, Java opts and disk watermarks
   are configurable in the app's Variables.
@@ -95,7 +95,7 @@ Each packaged chart is attached to a GitHub Release per app/version:
 
 | Release              | Asset                    |
 |----------------------|--------------------------|
-| deepseekharness-0.1.1 | deepseekharness-0.1.1.tgz |
+| deepseekharness-0.1.3 | deepseekharness-0.1.3.tgz |
 | elasticsearch-0.0.8  | elasticsearch-0.0.8.tgz  |
 | nextaidrawio-0.0.8   | nextaidrawio-0.0.8.tgz   |
 | outlineapp-0.4.0     | outlineapp-0.4.0.tgz     |
