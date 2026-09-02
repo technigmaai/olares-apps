@@ -44,6 +44,9 @@ plain HTTP inside the pod.
 
 ## Notes
 
+- Two entrances: **DeepSeek Harness** (the web UI, port 8080) and
+  **DeepSeek Harness CLI** (a web terminal sidecar that execs into the DSH
+  container — full workstation toolchain + `dsh` CLI on PATH).
 - The entrance is `authLevel: private` (Olares login required) and
   `options.apiTimeout: 0` (DSH uses long-lived WebSockets for terminals and
   LLM streams).

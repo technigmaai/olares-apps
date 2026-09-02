@@ -36,7 +36,7 @@ olares-cli market install <app> -s upload --version <ver> --watch
 
 | App | Title | Chart ver | App ver | Category | What it is |
 |---|---|---|---|---|---|
-| [deepseekharness](./deepseekharness) | DeepSeek Harness | 0.1.3 | 0.1.2-alpha.4 | Developer Tools | Agentic coding environment with Caddy web login (DSH + workstation toolchain) |
+| [deepseekharness](./deepseekharness) | DeepSeek Harness | 0.1.5 | 0.1.2-alpha.4 | Developer Tools | Agentic coding environment with Caddy web login, CLI terminal (DSH + workstation toolchain) |
 | [elasticsearch](./elasticsearch) | Elasticsearch | 0.0.8 | 9.4.4 | Utilities | Distributed search & analytics engine (REST API, full-text search) |
 | [nextaidrawio](./nextaidrawio) | Next AI Draw.io | 0.0.8 | 0.4.16 | Utilities | AI-powered diagramming — chat, draw, visualize |
 | [outlineapp](./outlineapp) | Outline | 0.4.0 | 1.9.2 | Productivity | Fast, collaborative knowledge base / wiki for your team |
@@ -96,7 +96,7 @@ Each packaged chart is attached to a GitHub Release per app/version:
 
 | Release              | Asset                    |
 |----------------------|--------------------------|
-| deepseekharness-0.1.3 | deepseekharness-0.1.3.tgz |
+| deepseekharness-0.1.5 | deepseekharness-0.1.5.tgz |
 | elasticsearch-0.0.8  | elasticsearch-0.0.8.tgz  |
 | nextaidrawio-0.0.8   | nextaidrawio-0.0.8.tgz   |
 | outlineapp-0.4.0     | outlineapp-0.4.0.tgz     |
