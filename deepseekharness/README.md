@@ -1,5 +1,9 @@
 # DeepSeek Harness
 
+> **Updating the fork image (newer upstream DSH)?** Follow
+> [IMAGE-UPDATE.md](./IMAGE-UPDATE.md) — self-contained runbook: where to
+> check for new versions, the two mandatory Olares fixes, build/verify/push.
+
 [DeepSeek Harness (DSH)](https://github.com/deepseek-ai/deepseek-harness) — agentic
 coding environment, packaged for Olares with the
 [okxlin/release-factory](https://github.com/okxlin/release-factory) image
