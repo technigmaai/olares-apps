@@ -15,7 +15,7 @@
 #      the bounding set. Caddy binds to 8080 (>1024) and needs no
 #      cap_net_bind_service; mtr-packet works without cap_net_raw for
 #      non-root users.
-FROM docker.io/moelin/deepseek-harness:0.1.2-alpha.4-workstation
+FROM docker.io/moelin/deepseek-harness:0.1.2-alpha.5-workstation
 
 RUN setcap -r /usr/bin/caddy -r /usr/bin/mtr-packet
 
