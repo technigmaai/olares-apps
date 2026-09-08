@@ -230,6 +230,29 @@ goes into the `setcap -r` list in the Dockerfile. (The image ships `getcap`;
 scanning on the host after `docker export` does **not** work — export loses
 xattrs.)
 
+Runtime base (no `getcap`/`setcap` installed): the scan above is meaningless
+(missing tool → empty result looks like "no caps"). Test empirically instead:
+
+```bash
+# EPERM = caddy still carries cap_net_bind_service → must be stripped
+docker run --rm --user 1000:1000 --cap-drop ALL --entrypoint /usr/bin/caddy \
+  moelin/deepseek-harness:<NEW> version
+# sanity: sh must work in the same context
+docker run --rm --user 1000:1000 --cap-drop ALL --entrypoint sh \
+  moelin/deepseek-harness:<NEW> -c 'echo sh-ok'
+```
+
+Runtime-base Dockerfile delta (0.1.3-alpha.2 is the known case): no
+`mtr-packet` (workstation-only) and no `setcap` tool — install `libcap2-bin`
+in the build:
+
+```dockerfile
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libcap2-bin \
+    && setcap -r /usr/bin/caddy \
+    && rm -rf /var/lib/apt/lists/*
+```
+
 ### 3.4 Update the Dockerfile
 
 Change the `FROM` line to the new base; extend the `setcap -r` line if 3.3
@@ -307,6 +330,10 @@ DSH exports — the compatible alternative is `dsh-at-mention`).
 ## Pitfalls (learned the hard way)
 
 - **`:latest` is untrustworthy** — builder pins lag; pin versioned tags.
+- **Releases may be runtime-only** — 0.1.3-alpha.2 shipped without a
+  `-workstation` tag. Check the `-workstation` variant exists before building
+  a workstation fork; if only runtime exists, flag the toolchain loss to the
+  user and use the runtime-base Dockerfile delta (Part 3.3).
 - **`setcap -r f1 f2` fails** — needs `-r` per file.
 - **docker cp/export lose xattrs** — scan file caps *inside* the image
   (it ships `getcap`).
