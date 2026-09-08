@@ -261,8 +261,16 @@ found new binaries. Keep the existing `COPY entrypoint-olares.sh
 
 ### 3.5 Build
 
+Tag naming — the suffix encodes the BASE VARIANT (so forks are unambiguous):
+
+| Base image | Fork tag |
+|---|---|
+| `<NEW>-workstation` | `docker.io/technigmaai/deepseek-harness:<NEW>-olares` |
+| `<NEW>` (runtime only) | `docker.io/technigmaai/deepseek-harness:<NEW>-olares-runtime` |
+
 ```bash
-docker build -t docker.io/technigmaai/deepseek-harness:<NEW>-olares .
+docker build -t docker.io/technigmaai/deepseek-harness:<NEW>-olares .   # workstation base
+# docker build -t docker.io/technigmaai/deepseek-harness:<NEW>-olares-runtime .   # runtime base
 ```
 
 ### 3.6 Verify with the EXACT Olares security context
@@ -293,11 +301,15 @@ Failure signatures → causes:
 ### 3.7 Push
 
 ```bash
-docker push docker.io/technigmaai/deepseek-harness:<NEW>-olares
+docker push docker.io/technigmaai/deepseek-harness:<NEW>-olares   # or -olares-runtime for runtime base
 # verify:
 curl -s "https://hub.docker.com/v2/repositories/technigmaai/deepseek-harness/tags/<NEW>-olares" \
   | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('name'), (d.get('tag_last_pushed') or '')[:10])"
 ```
+
+(Note: deleting a Docker Hub tag programmatically is not available with the
+refresh-token docker credentials — 401 on the Hub v2 API. Stale/renamed tags
+are harmless if unreferenced; remove them via the Docker Hub web UI if wanted.)
 
 ## Part 4 — Chart update (optional follow-up)
 
