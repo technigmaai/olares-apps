@@ -307,9 +307,19 @@ curl -s "https://hub.docker.com/v2/repositories/technigmaai/deepseek-harness/tag
   | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('name'), (d.get('tag_last_pushed') or '')[:10])"
 ```
 
-(Note: deleting a Docker Hub tag programmatically is not available with the
-refresh-token docker credentials — 401 on the Hub v2 API. Stale/renamed tags
-are harmless if unreferenced; remove them via the Docker Hub web UI if wanted.)
+(Note: stale/renamed tags CAN be deleted programmatically. Basic auth and the
+registry token both fail; the working flow is the Hub v2 API: exchange the
+Docker Hub PAT (stored under `https://index.docker.io/v1/` in
+`~/.docker/config.json`) for a short-lived JWT, then DELETE with it:
+
+```bash
+PAT=$(python3 -c "import json,base64; print(base64.b64decode(json.load(open('/home/technigmaai/.docker/config.json'))['auths']['https://index.docker.io/v1/']['auth']).decode().partition(':')[2])")
+JWT=$(curl -s -X POST -H 'Content-Type: application/json' \
+  -d "{\"identifier\":\"technigmaai\",\"secret\":\"$PAT\"}" https://hub.docker.com/v2/auth/token \
+  | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('token') or d.get('access_token') or '')")
+curl -s -X DELETE -H "Authorization: Bearer $JWT" \
+  https://hub.docker.com/v2/repositories/technigmaai/deepseek-harness/tags/<TAG>   # 204 = deleted
+```)
 
 ## Part 4 — Chart update (optional follow-up)
 
