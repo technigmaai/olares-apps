@@ -1,27 +1,49 @@
-# DSH Fork Image — Docker-Only Update Runbook
+# DeepSeek Harness — Fork Image Update (Docker only)
 
 Reusable guide for updating **just the Docker image**
 (`docker.io/technigmaai/deepseek-harness:<ver>-olares[-runtime]`) when a newer
 upstream `moelin/deepseek-harness` release appears. **Image only** — it does
-not touch the Olares chart or the running app. For the chart/app bump after
-the image is pushed, see [IMAGE-UPDATE.md](./IMAGE-UPDATE.md) Part 4.
+not touch any app/chart deployment. (This image is *used* by an Olares app
+chart; for that side see [IMAGE-UPDATE.md](./IMAGE-UPDATE.md) Part 4.)
 
 A fresh agent session can run this with no other context. Workdir: this
-folder (holds the `Dockerfile` + `entrypoint-olares.sh` of the last known-good
-build). Docker CLI is available and logged in as `technigmaai`; node arch is
-amd64 (single-arch fork is fine).
+folder (holds the `Dockerfile` + `entrypoint-olares.sh` of the last
+known-good build). Docker CLI must be logged in (account `technigmaai`).
 
-## 0. What the fork is
+## 0. Portability & what the fork is
 
-A 2-layer wrapper over the upstream image:
+The fork is a **portable Linux container** — it runs on any x86_64 host with
+Docker or containerd (bare metal, VM, k8s). It is NOT Olares-specific:
 
-1. **Patched entrypoint** (`COPY entrypoint-olares.sh /usr/local/bin/entrypoint.sh`) —
-   upstream runs as root + `gosu`; Olares OPA denies non-trusted root images
-   and gosu can't switch users under uid 1000. The patch makes the entrypoint
-   run DSH/Caddy as the current user when unprivileged (gosu kept for root).
-2. **File-capability strip** (`RUN setcap -r ...`) — `caddy`
-   (cap_net_bind_service) / `mtr-packet` (cap_net_raw) fail `execve` with
-   EPERM under Olares' `capabilities: drop: ["ALL"]` empty bounding set.
+- Built single-arch for the build host (`amd64`). The upstream base is
+  multi-arch; build on the arch you need (multi-arch publish = out of scope).
+- Designed to run **behind a TLS-terminating reverse proxy**: `auto_https off`
+  inside, only Caddy listens on the container port (8080), DSH is bound to
+  container loopback (3080), `/healthz` is unauthenticated for probes.
+- **amd64 only** unless rebuilt on/for another arch.
+
+It is the upstream image plus two **backwards-compatible** patches (root
+behavior is unchanged — it only *adds* what restricted environments need):
+
+1. **Non-root support** (`COPY entrypoint-olares.sh ...`). Upstream runs as
+   root and drops to the `node` user via `gosu`. `gosu` cannot switch users
+   without root, so the upstream image fails when the container is forced to
+   an unprivileged uid. The patch makes the entrypoint run the DSH/Caddy
+   processes as the *current* user when unprivileged (still gosu when root).
+   Needed by sandboxes that deny root containers (e.g. Olares' OPA policy
+   rejects non-trusted root images and forces uid 1000).
+2. **File-capability strip** (`RUN setcap -r ...`). `caddy`
+   (cap_net_bind_service) and, on workstation bases, `mtr-packet`
+   (cap_net_raw) carry file capabilities; `execve` of such a binary fails
+   with EPERM when the runtime gives the container an **empty capability
+   bounding set** (e.g. `securityContext capabilities.drop: ["ALL"]`).
+   Stripping is harmless everywhere: caddy binds 8080 (>1024) so it never
+   needs the cap.
+
+**Tag naming** (historical, kept for continuity with published tags and the
+app chart): `-olares` = built from the `-workstation` base,
+`-olares-runtime` = built from the runtime base. The images themselves are
+generic.
 
 ## 1. Check for a newer version
 
@@ -51,9 +73,9 @@ curl -s "https://registry.npmjs.org/@deepseek-ai/dsh" | python3 -c "import json,
 **Decision rule**
 - Base = newest **versioned** Docker Hub tag strictly newer than the current
   `FROM` in `Dockerfile`.
-- Prefer the `-workstation` variant (app needs the toolchain). If a release
-  shipped **runtime-only** (no `-workstation` tag), tell the user (toolchain
-  loss) — build the runtime fork only on their OK.
+- Prefer the `-workstation` variant (full dev toolchain). If a release shipped
+  **runtime-only** (no `-workstation` tag), note the toolchain loss — build
+  the runtime fork only with an explicit OK.
 - ⚠️ **Never build from `:latest`/`:workstation` floating tags** — the
   builder's source pin has lagged and `latest` once pointed at an *older* DSH.
 
@@ -76,7 +98,7 @@ grep -n 'gosu' /tmp/entrypoint-new.sh    # expect the 4 call sites
 
 Run from this folder. The script **asserts its anchors** — if upstream
 restructured the entrypoint it fails loudly; patch by hand then (4 call sites:
-`web_help=` line, the DSH subshell line — must become
+the `web_help=` line, the DSH subshell line — must become
 `"${APP_RUNNER[@]}" dsh "${DSH_ARGS[@]}" \` because it runs through `env` and
 cannot call a shell function — and the two Caddy `env \` lines; plus the
 helper block after `fatal()`):
@@ -126,7 +148,7 @@ diff entrypoint-olares.sh /tmp/entrypoint-new.sh
 ```
 
 (If the diff shows only the helper block + 4 call-site lines, the upstream
-entrypoint was unchanged and the existing file would have been reusable as-is.)
+entrypoint was unchanged.)
 
 ### 2.3 File-capability scan
 
@@ -172,10 +194,29 @@ COPY entrypoint-olares.sh /usr/local/bin/entrypoint.sh
 docker build -t docker.io/technigmaai/deepseek-harness:<TAG> .
 ```
 
-## 3. Verify (exact Olares security context)
+## 3. Verify — two runs
 
-The real pod runs `runAsUser/runAsGroup 1000`, `allowPrivilegeEscalation:
-false`, `capabilities.drop: [ALL]` — the test must mirror that:
+### 3a. Standard run (root, like upstream)
+
+Proves the fork didn't break the normal path:
+
+```bash
+docker run -d --name dshv -e PUBLIC_URL=https://dsh.example.com \
+  -e AUTH_PASSWORD=testpassword123 \
+  -v /tmp/dshv-data:/data -v /tmp/dshv-ws:/workspace \
+  docker.io/technigmaai/deepseek-harness:<TAG>
+sleep 40
+docker exec dshv curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8080/healthz   # 200
+docker exec dshv cat /etc/deepseek-harness-version        # DSH_VERSION=<NEW>
+docker logs dshv 2>&1 | grep -E 'ERROR|Error'             # nothing
+docker rm -f dshv; rm -rf /tmp/dshv-data /tmp/dshv-ws
+```
+
+### 3b. Sandboxed run (the patches under test)
+
+This is the strict test — unprivileged uid + empty capability bounding set
+(no capabilities, no escalation). Any restricted-runtime deployment (Olares
+included) needs this to pass:
 
 ```bash
 rm -rf /tmp/dsh-v && mkdir -p /tmp/dsh-v/data /tmp/dsh-v/ws && chown -R 1000:1000 /tmp/dsh-v
@@ -183,25 +224,49 @@ docker run -d --name dshv --user 1000:1000 --cap-drop ALL --security-opt no-new-
   -e PUBLIC_URL=https://dsh.example.com -e AUTH_PASSWORD=testpassword123 \
   -v /tmp/dsh-v/data:/data -v /tmp/dsh-v/ws:/workspace \
   docker.io/technigmaai/deepseek-harness:<TAG>
-sleep 40   # DSH cold start ~20-45s
-docker inspect dshv --format '{{.State.Status}}'      # expect: running
-docker exec dshv curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8080/healthz  # expect: 200
-docker exec dshv cat /etc/deepseek-harness-version    # expect: DSH_VERSION=<NEW>
-docker logs dshv 2>&1 | grep -E 'ERROR|Error'         # expect: nothing
+sleep 45   # DSH cold start ~20-45s
+docker inspect dshv --format '{{.State.Status}}'      # running
+docker exec dshv curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8080/healthz   # 200
+docker exec dshv cat /etc/deepseek-harness-version    # DSH_VERSION=<NEW>
+docker logs dshv 2>&1 | grep -E 'ERROR|Error'         # nothing
 # workstation only: toolchain spot-check
 docker exec dshv sh -c 'gcc --version | head -1; python3 --version; go version'
 docker rm -f dshv && rm -rf /tmp/dsh-v
 ```
 
 Failure signatures:
+
 | Symptom | Cause |
 |---|---|
 | exit 1, **no logs**, dirs created in /data | gosu still in entrypoint (silent `set -e` death) |
-| `exec /usr/bin/caddy: operation not permitted` | uncapped file-cap binary (Fix 2) |
-| `install: cannot change owner ... /data` | test harness: chown mount dirs to 1000 first (real pods use the chart's initContainer) |
+| `exec /usr/bin/caddy: operation not permitted` | uncapped file-cap binary (patch 2) |
+| `install: cannot change owner ... /data` | harness issue in 3b: chown mount dirs to 1000 first (in real deployments the orchestrator pre-owns or chowns them) |
 | `PUBLIC_URL is required` / auth errors | missing test env vars |
 
-## 4. Push + housekeeping
+## 4. Standalone usage (any host)
+
+The image is built for a reverse proxy in front (loopback port + trusted
+proxy). Minimal standalone run:
+
+```bash
+mkdir -p /opt/deepseek-harness/data /opt/deepseek-harness/workspace
+docker run -d --name dsh \
+  -p 127.0.0.1:56789:8080 \
+  -e PUBLIC_URL=https://dsh.example.com \
+  -e AUTH_PASSWORD=<min-12-chars> \
+  -v /opt/deepseek-harness/data:/data \
+  -v /opt/deepseek-harness/workspace:/workspace \
+  docker.io/technigmaai/deepseek-harness:<TAG>
+```
+
+`/data` MUST be a real persistent mount (the entrypoint fails closed
+otherwise); it holds auth DB, JWT key, Caddy state, DSH state. `PUBLIC_URL`
+must be the exact browser origin (no path). Workstation bases also persist
+tools in `HOME` (`/home/node`) — mount it if tool persistence matters
+(e.g. an extra volume). Full config reference: the upstream README
+(linked in Part 1).
+
+## 5. Push + housekeeping
 
 ```bash
 docker push docker.io/technigmaai/deepseek-harness:<TAG>
@@ -225,22 +290,22 @@ curl -s -X DELETE -H "Authorization: Bearer $JWT" \
 API; registry-1 DELETE is 404 — only the flow above works.)
 
 Finish with: `git add Dockerfile entrypoint-olares.sh && git commit -m
-"deepseekharness fork: <NEW> base" && git push origin main` (only if the
+"deepseek-harness fork: <NEW> base" && git push origin main` (only if the
 files changed).
 
-## 5. Pitfalls (learned the hard way)
+## 6. Pitfalls (learned the hard way)
 
 - **`:latest` untrustworthy** — builder source pins lag; pin versioned tags.
 - **Releases may be runtime-only** — 0.1.3-alpha.2 first shipped without a
   `-workstation` tag. Check before assuming.
 - **`setcap -r f1 f2` fails** — one `-r` per file.
 - **docker cp/export lose xattrs** — scan caps *inside* the image.
-- **gosu under uid 1000** fails EPERM and the entrypoint dies silently.
-- **execve EPERM under `cap-drop ALL`** = file-capability signature
+- **gosu under uid 1000** fails EPERM and the entrypoint dies silently
+  (`set -e` + captured stderr → no logs).
+- **execve EPERM under empty bounding set** = file-capability signature
   (sh/node exec fine, caddy fails).
-- **Tag naming encodes the base variant**: `-olares` = workstation,
-  `-olares-runtime` = runtime. Keep it — it's the only thing telling a future
-  reader what's inside.
+- **Tag suffix encodes the base variant**: `-olares` = workstation,
+  `-olares-runtime` = runtime — even though the images are generic. Keep it.
 
 ## Build history
 
