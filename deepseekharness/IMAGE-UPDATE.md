@@ -5,6 +5,10 @@ context. Everything needed is here: where to check for newer upstream images,
 what the fork must change (and why), exact build/verify/push commands, and the
 pitfalls discovered while building it.
 
+> **Docker image only** (no chart/app work)? Use the slimmer
+> [DOCKER-IMAGE-UPDATE.md](./DOCKER-IMAGE-UPDATE.md) instead — same build
+> pipeline, minus Part 4 (chart update) and app-state notes.
+
 ## Purpose
 
 The Olares app `deepseekharness` does **not** run the upstream image directly.
