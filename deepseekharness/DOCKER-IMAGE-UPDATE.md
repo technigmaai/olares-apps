@@ -316,3 +316,4 @@ files changed).
 | `0.1.3-alpha.2-olares-runtime` | 0.1.3-alpha.2 (runtime-only release) | 0.1.3-alpha.2 | `107ff066759a…` |
 | `0.1.3-alpha.2-olares` | 0.1.3-alpha.2-workstation | 0.1.3-alpha.2 | `b90044ed97f2…` |
 | `0.1.5-rc.1-olares` | 0.1.5-rc.1-workstation | 0.1.5-rc.1 | `adf9b065cbab…` |
+| `0.1.5-rc.2-olares` | 0.1.5-rc.2-workstation | 0.1.5-rc.2 | `b7d517d5057b…` |

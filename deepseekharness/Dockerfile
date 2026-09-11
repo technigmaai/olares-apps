@@ -20,7 +20,7 @@
 # fork (when upstream ships no -workstation tag) -> `<ver>-olares-runtime`;
 # see IMAGE-UPDATE.md (Part 3.3/3.5) for the runtime delta (no mtr-packet,
 # install libcap2-bin for setcap).
-FROM docker.io/moelin/deepseek-harness:0.1.5-rc.1-workstation
+FROM docker.io/moelin/deepseek-harness:0.1.5-rc.2-workstation
 
 RUN setcap -r /usr/bin/caddy -r /usr/bin/mtr-packet
 
