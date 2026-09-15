@@ -485,6 +485,12 @@ run_as_app env \
     caddy validate --config "${CADDY_CONFIG}" --adapter caddyfile
 
 log "starting Caddy on 0.0.0.0:${PORT} with AUTH_MODE=${AUTH_MODE}"
+# Always start from the image's Caddyfile: Caddy's persisted autosave is a
+# compiled-config cache and goes stale when the image's Caddyfile changes
+# (e.g. fork patches) — Caddy would keep serving the old routing. The state
+# that must persist (caddy-security identity store) lives in /data/auth, not
+# in the autosave.
+rm -f "${CADDY_DATA_HOME}/config/caddy/autosave.json"
 run_as_app env \
     XDG_CONFIG_HOME="${CADDY_CONFIG_HOME}" \
     XDG_DATA_HOME="${CADDY_DATA_HOME}" \

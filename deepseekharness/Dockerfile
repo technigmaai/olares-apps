@@ -36,7 +36,39 @@ RUN setcap -r /usr/bin/caddy -r /usr/bin/mtr-packet
 
 COPY entrypoint-olares.sh /usr/local/bin/entrypoint.sh
 
-RUN sed -i 's|header_up Host {$DSH_UPSTREAM_HOST}|header_up Host 127.0.0.1:{$DSH_INTERNAL_PORT}\n\t\t\theader_up Origin http://127.0.0.1:{$DSH_INTERNAL_PORT}|' \
-    /etc/caddy/Caddyfile /etc/caddy/Caddyfile.passthrough \
-    && grep -q "header_up Host 127.0.0.1" /etc/caddy/Caddyfile \
-    && grep -q "header_up Host 127.0.0.1" /etc/caddy/Caddyfile.passthrough
+RUN python3 - <<'PY'
+import sys
+# DSH's webserver accepts ONLY a loopback Host header for plugin-registered
+# /api routes (any domain/pod-IP Host -> empty 400). Make sure EVERY
+# reverse_proxy block in both Caddyfiles forwards a loopback Host + matching
+# Origin (the plugins' trust fence requires socket loopback AND Host loopback
+# AND Origin==Host; Caddy is the trusted loopback proxy and enforces the
+# public origin boundary itself). Core DSH routes are unaffected.
+OPEN = 'reverse_proxy 127.0.0.1:{$DSH_INTERNAL_PORT} {'
+INJECT = ('header_up Host 127.0.0.1:{$DSH_INTERNAL_PORT}\n'
+          '\t\t\theader_up Origin http://127.0.0.1:{$DSH_INTERNAL_PORT}\n')
+for f in ('/etc/caddy/Caddyfile', '/etc/caddy/Caddyfile.passthrough'):
+    s = open(f).read()
+    # (a) stock files: replace the public-authority Host where present
+    s = s.replace('header_up Host {$DSH_UPSTREAM_HOST}',
+                  'header_up Host 127.0.0.1:{$DSH_INTERNAL_PORT}\n'
+                  '\t\t\theader_up Origin http://127.0.0.1:{$DSH_INTERNAL_PORT}')
+    # (b) main route blocks that have NO Host line at all (caddy-security
+    #     Caddyfile): inject Host+Origin right after the block opens
+    out, i = [], 0
+    for _ in range(s.count(OPEN)):
+        start = s.index(OPEN, i)
+        end = s.index('\n\t\t}', start)
+        block = s[start:end]
+        if 'header_up Host' not in block:
+            block = OPEN + '\n' + INJECT + block[len(OPEN):]
+        out.append(s[i:start] + block)
+        i = end
+    out.append(s[i:])
+    open(f, 'w').write(''.join(out))
+    assert s.count(OPEN) >= 1
+PY
+# verify: every reverse_proxy block in both files now sets the loopback Host
+RUN grep -c 'header_up Host 127.0.0.1' /etc/caddy/Caddyfile /etc/caddy/Caddyfile.passthrough | grep -v ':0' \
+    && [ "$(grep -c 'header_up Host 127.0.0.1' /etc/caddy/Caddyfile)" -ge 2 ] \
+    && [ "$(grep -c 'header_up Host 127.0.0.1' /etc/caddy/Caddyfile.passthrough)" -ge 2 ]
