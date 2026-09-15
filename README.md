@@ -96,7 +96,7 @@ Each packaged chart is attached to a GitHub Release per app/version:
 
 | Release              | Asset                    |
 |----------------------|--------------------------|
-| deepseekharness-0.1.6 | deepseekharness-0.1.6.tgz |
+| deepseekharness-0.1.7 | deepseekharness-0.1.7.tgz |
 | elasticsearch-0.0.8  | elasticsearch-0.0.8.tgz  |
 | nextaidrawio-0.0.8   | nextaidrawio-0.0.8.tgz   |
 | outlineapp-0.4.0     | outlineapp-0.4.0.tgz     |
