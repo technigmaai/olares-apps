@@ -7,11 +7,11 @@ metadata:
   title: DeepSeek Harness
   description: DeepSeek Harness (DSH) — agentic coding environment with Caddy web login and rate limiting
   icon: https://cdn.jsdelivr.net/gh/technigmaai/olares-apps@main/assets/icons/deepseekharness.png
-  version: 0.1.5
+  version: 0.1.6
   categories:
     - Developer Tools
 spec:
-  versionName: "0.1.2-alpha.4"
+  versionName: "0.1.5-rc.2"
   runAsUser: true
   requiredCpu: 200m
   limitedCpu: "4"

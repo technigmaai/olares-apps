@@ -7,5 +7,5 @@ workloads:
 image:
   # Thin Olares fork of moelin/deepseek-harness (patched entrypoint, uid 1000)
   repository: docker.io/technigmaai/deepseek-harness
-  tag: 0.1.2-alpha.4-olares
+  tag: 0.1.5-rc.2-olares
   pullPolicy: Always
