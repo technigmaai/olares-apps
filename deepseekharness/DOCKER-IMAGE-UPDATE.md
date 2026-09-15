@@ -6,6 +6,12 @@ upstream `moelin/deepseek-harness` release appears. **Image only** — it does
 not touch any app/chart deployment. (This image is *used* by an Olares app
 chart; for that side see [IMAGE-UPDATE.md](./IMAGE-UPDATE.md) Part 4.)
 
+> **Picking this up next time?** Start with
+> [MAINTENANCE.md](./MAINTENANCE.md) — the canonical state-of-the-world +
+> new-container + package-upgrade guide (exact live values, all 4 fork
+> patches, the traps, and the verification checklist). This file is the
+> image-build runbook it references.
+
 A fresh agent session can run this with no other context. Workdir: this
 folder (holds the `Dockerfile` + `entrypoint-olares.sh` of the last
 known-good build). Docker CLI must be logged in (account `technigmaai`).
@@ -22,7 +28,7 @@ Docker or containerd (bare metal, VM, k8s). It is NOT Olares-specific:
   container loopback (3080), `/healthz` is unauthenticated for probes.
 - **amd64 only** unless rebuilt on/for another arch.
 
-It is the upstream image plus **three backwards-compatible** patches (root
+It is the upstream image plus **four backwards-compatible** patches (root
 behavior is unchanged — they only *add* what restricted environments need):
 
 1. **Non-root support** (`COPY entrypoint-olares.sh ...`). Upstream runs as
@@ -39,13 +45,22 @@ behavior is unchanged — they only *add* what restricted environments need):
    bounding set** (e.g. `securityContext capabilities.drop: ["ALL"]`).
    Stripping is harmless everywhere: caddy binds 8080 (>1024) so it never
    needs the cap.
-3. **Caddyfile Host/Origin loopback fix** (`RUN sed ...`). DSH's webserver
-   accepts ONLY a loopback `Host` header for **plugin-registered** `/api`
-   routes — any domain/pod-IP Host gets an empty 400 (core routes are
+3. **Caddyfile Host/Origin loopback fix** (python patch in the Dockerfile,
+   applied to **every** `reverse_proxy` block in both Caddyfiles). DSH's
+   webserver accepts ONLY a loopback `Host` header for **plugin-registered**
+   `/api` routes — any domain/pod-IP Host gets an empty 400 (core routes are
    unaffected). The stock Caddyfiles forward the public authority
-   (`$DSH_UPSTREAM_HOST`) as Host, so stock images 400 on every plugin API
+   (`$DSH_UPSTREAM_HOST`) as Host — and the caddy-security file's *main*
+   route had NO Host line at all — so stock images 400 on every plugin API
    call (e.g. the dsh-skill-explorer panel shows "Failed to load: HTTP 400";
    plugins without custom API routes, like dsh-at-mention, are unaffected).
+   The fix makes each block forward `Host 127.0.0.1:$DSH_INTERNAL_PORT` +
+   matching `Origin` — the shape the plugins' trust fence expects.
+4. **Caddy autosave self-heal** (in `entrypoint-olares.sh`). Caddy persists
+   a compiled config to `/data/caddy/config/caddy/autosave.json`; if a stale
+   autosave survives an image update, Caddy keeps serving the OLD routing and
+   patch 3 appears "not to work". The entrypoint now `rm -f`s the autosave
+   before `caddy run`, so the image's Caddyfile is always authoritative.
    The fix forwards `Host 127.0.0.1:$DSH_INTERNAL_PORT` + a matching
    `Origin` — exactly the shape the plugins' trust fence expects (loopback
    socket AND loopback Host AND Origin==Host); Caddy itself enforces the
@@ -161,6 +176,15 @@ diff entrypoint-olares.sh /tmp/entrypoint-new.sh
 (If the diff shows only the helper block + 4 call-site lines, the upstream
 entrypoint was unchanged.)
 
+The fork entrypoint also carries **patch 4** (Caddy autosave self-heal): make
+sure `entrypoint-olares.sh` contains, immediately before the `caddy run` line:
+
+```sh
+rm -f "${CADDY_DATA_HOME}/config/caddy/autosave.json"
+```
+
+(If you re-derived the entrypoint from a fresh upstream file, re-add it.)
+
 ### 2.3 File-capability scan
 
 Workstation base (ships `getcap`):
@@ -180,14 +204,44 @@ test empirically — `docker run --rm --user 1000:1000 --cap-drop ALL
 
 ### 2.4 Dockerfile
 
-Workstation base:
+The Caddyfile patch must cover **every** `reverse_proxy` block in both files
+(the stock caddy-security file's main route has no Host line, so a
+replace-only sed misses it). Use this python step:
+
+```dockerfile
+RUN python3 - <<'PY'
+OPEN = 'reverse_proxy 127.0.0.1:{$DSH_INTERNAL_PORT} {'
+INJECT = ('header_up Host 127.0.0.1:{$DSH_INTERNAL_PORT}\n'
+          '\t\t\theader_up Origin http://127.0.0.1:{$DSH_INTERNAL_PORT}\n')
+for f in ('/etc/caddy/Caddyfile', '/etc/caddy/Caddyfile.passthrough'):
+    s = open(f).read()
+    s = s.replace('header_up Host {$DSH_UPSTREAM_HOST}',
+                  'header_up Host 127.0.0.1:{$DSH_INTERNAL_PORT}\n'
+                  '\t\t\theader_up Origin http://127.0.0.1:{$DSH_INTERNAL_PORT}')
+    out, i = [], 0
+    for _ in range(s.count(OPEN)):
+        start = s.index(OPEN, i)
+        end = s.index('\n\t\t}', start)
+        block = s[start:end]
+        if 'header_up Host' not in block:
+            block = OPEN + '\n' + INJECT + block[len(OPEN):]
+        out.append(s[i:start] + block)
+        i = end
+    out.append(s[i:])
+    open(f, 'w').write(''.join(out))
+PY
+# verify: >=2 loopback-Host lines per file (settings + main routes)
+RUN [ "$(grep -c 'header_up Host 127.0.0.1' /etc/caddy/Caddyfile)" -ge 2 ] \
+    && [ "$(grep -c 'header_up Host 127.0.0.1' /etc/caddy/Caddyfile.passthrough)" -ge 2 ]
+```
+
+Workstation base (full file):
 
 ```dockerfile
 FROM docker.io/moelin/deepseek-harness:<NEW>-workstation
 RUN setcap -r /usr/bin/caddy -r /usr/bin/mtr-packet
 COPY entrypoint-olares.sh /usr/local/bin/entrypoint.sh
-RUN sed -i 's|header_up Host {$DSH_UPSTREAM_HOST}|header_up Host 127.0.0.1:{$DSH_INTERNAL_PORT}\n\t\t\theader_up Origin http://127.0.0.1:{$DSH_INTERNAL_PORT}|' \
-    /etc/caddy/Caddyfile /etc/caddy/Caddyfile.passthrough
+<the Caddyfile python patch + verify from above>
 ```
 
 Runtime base (no `mtr-packet`, no `setcap` tool — install libcap2-bin):
@@ -199,13 +253,13 @@ RUN apt-get update \
     && setcap -r /usr/bin/caddy \
     && rm -rf /var/lib/apt/lists/*
 COPY entrypoint-olares.sh /usr/local/bin/entrypoint.sh
-RUN sed -i 's|header_up Host {$DSH_UPSTREAM_HOST}|header_up Host 127.0.0.1:{$DSH_INTERNAL_PORT}\n\t\t\theader_up Origin http://127.0.0.1:{$DSH_INTERNAL_PORT}|' \
-    /etc/caddy/Caddyfile /etc/caddy/Caddyfile.passthrough
+<the Caddyfile python patch + verify from above>
 ```
 
 (If a future base's Caddyfiles no longer contain `header_up Host
-{$DSH_UPSTREAM_HOST}` — upstream fixed the Host handling — drop the sed and
-re-verify the plugin `/list` probe in Part 3c.)
+{$DSH_UPSTREAM_HOST}` and their main route already forwards a loopback Host
+— upstream fixed the Host handling — drop the patch and re-verify the plugin
+`/list` probe in Part 3c.)
 
 ### 2.5 Build
 
@@ -338,9 +392,16 @@ files changed).
 - **execve EPERM under empty bounding set** = file-capability signature
   (sh/node exec fine, caddy fails).
 - **Plugin `/api` routes 400 (empty body) through Caddy** = DSH
-  loopback-Host validation vs. the Caddyfile's public `$DSH_UPSTREAM_HOST`
-  (fixed by fork patch 3; core routes are unaffected, so only plugins with
-  custom API routes show it).
+  loopback-Host validation (fixed by fork patch 3 — on **all** reverse_proxy
+  blocks, not just the settings route; core routes are unaffected, so only
+  plugins with custom API routes show it).
+- **Stale Caddy autosave** = `/data/caddy/config/caddy/autosave.json` from an
+  older image masks a Caddyfile change ("the fix doesn't work"). Fork
+  patch 4 removes it on every boot; if testing a hand-built image, delete it
+  manually first (`olares-cli files rm -f drive/Data/deepseekharness/caddy/config/caddy/autosave.json`).
+- **Node digest cache** — re-pushing a tag can keep serving the old digest on
+  the node even with `pullPolicy: Always`. When that happens, push a **fresh
+  tag** (e.g. `-olares-2`) and point the chart at it.
 - **Tag suffix encodes the base variant**: `-olares` = workstation,
   `-olares-runtime` = runtime — even though the images are generic. Keep it.
 
@@ -354,3 +415,4 @@ files changed).
 | `0.1.3-alpha.2-olares` | 0.1.3-alpha.2-workstation | 0.1.3-alpha.2 | `b90044ed97f2…` |
 | `0.1.5-rc.1-olares` | 0.1.5-rc.1-workstation | 0.1.5-rc.1 | `adf9b065cbab…` |
 | `0.1.5-rc.2-olares` | 0.1.5-rc.2-workstation | 0.1.5-rc.2 | `b7d517d5057b…` |
+| `0.1.5-rc.2-olares-2` | 0.1.5-rc.2-workstation | 0.1.5-rc.2 | `cc550379c3c2…` (all 4 patches: entrypoint + setcap + Caddyfile all-routes loopback + autosave self-heal; fresh tag to bust the node digest cache) |
