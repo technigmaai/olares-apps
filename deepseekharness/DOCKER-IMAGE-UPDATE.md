@@ -22,8 +22,8 @@ Docker or containerd (bare metal, VM, k8s). It is NOT Olares-specific:
   container loopback (3080), `/healthz` is unauthenticated for probes.
 - **amd64 only** unless rebuilt on/for another arch.
 
-It is the upstream image plus two **backwards-compatible** patches (root
-behavior is unchanged — it only *adds* what restricted environments need):
+It is the upstream image plus **three backwards-compatible** patches (root
+behavior is unchanged — they only *add* what restricted environments need):
 
 1. **Non-root support** (`COPY entrypoint-olares.sh ...`). Upstream runs as
    root and drops to the `node` user via `gosu`. `gosu` cannot switch users
@@ -39,6 +39,17 @@ behavior is unchanged — it only *adds* what restricted environments need):
    bounding set** (e.g. `securityContext capabilities.drop: ["ALL"]`).
    Stripping is harmless everywhere: caddy binds 8080 (>1024) so it never
    needs the cap.
+3. **Caddyfile Host/Origin loopback fix** (`RUN sed ...`). DSH's webserver
+   accepts ONLY a loopback `Host` header for **plugin-registered** `/api`
+   routes — any domain/pod-IP Host gets an empty 400 (core routes are
+   unaffected). The stock Caddyfiles forward the public authority
+   (`$DSH_UPSTREAM_HOST`) as Host, so stock images 400 on every plugin API
+   call (e.g. the dsh-skill-explorer panel shows "Failed to load: HTTP 400";
+   plugins without custom API routes, like dsh-at-mention, are unaffected).
+   The fix forwards `Host 127.0.0.1:$DSH_INTERNAL_PORT` + a matching
+   `Origin` — exactly the shape the plugins' trust fence expects (loopback
+   socket AND loopback Host AND Origin==Host); Caddy itself enforces the
+   public origin boundary.
 
 **Tag naming** (historical, kept for continuity with published tags and the
 app chart): `-olares` = built from the `-workstation` base,
@@ -175,6 +186,8 @@ Workstation base:
 FROM docker.io/moelin/deepseek-harness:<NEW>-workstation
 RUN setcap -r /usr/bin/caddy -r /usr/bin/mtr-packet
 COPY entrypoint-olares.sh /usr/local/bin/entrypoint.sh
+RUN sed -i 's|header_up Host {$DSH_UPSTREAM_HOST}|header_up Host 127.0.0.1:{$DSH_INTERNAL_PORT}\n\t\t\theader_up Origin http://127.0.0.1:{$DSH_INTERNAL_PORT}|' \
+    /etc/caddy/Caddyfile /etc/caddy/Caddyfile.passthrough
 ```
 
 Runtime base (no `mtr-packet`, no `setcap` tool — install libcap2-bin):
@@ -186,7 +199,13 @@ RUN apt-get update \
     && setcap -r /usr/bin/caddy \
     && rm -rf /var/lib/apt/lists/*
 COPY entrypoint-olares.sh /usr/local/bin/entrypoint.sh
+RUN sed -i 's|header_up Host {$DSH_UPSTREAM_HOST}|header_up Host 127.0.0.1:{$DSH_INTERNAL_PORT}\n\t\t\theader_up Origin http://127.0.0.1:{$DSH_INTERNAL_PORT}|' \
+    /etc/caddy/Caddyfile /etc/caddy/Caddyfile.passthrough
 ```
+
+(If a future base's Caddyfiles no longer contain `header_up Host
+{$DSH_UPSTREAM_HOST}` — upstream fixed the Host handling — drop the sed and
+re-verify the plugin `/list` probe in Part 3c.)
 
 ### 2.5 Build
 
@@ -242,6 +261,20 @@ Failure signatures:
 | `exec /usr/bin/caddy: operation not permitted` | uncapped file-cap binary (patch 2) |
 | `install: cannot change owner ... /data` | harness issue in 3b: chown mount dirs to 1000 first (in real deployments the orchestrator pre-owns or chowns them) |
 | `PUBLIC_URL is required` / auth errors | missing test env vars |
+
+### 3c. Plugin API route probe (only if the base ships/needs plugins)
+
+Stock Caddyfiles 400 on plugin-registered API routes (loopback-Host
+validation). With the fork's Caddyfile patch (Part 2.4) the probe must pass —
+skip it for bases whose Caddyfiles no longer inject the public Host:
+
+```bash
+# in a 3b-style container with a plugin installed
+#   (dsh plugin --profile web add @linxin666/dsh-client-ui-skill-explorer@latest,
+#    restart, then with AUTH_MODE=none):
+docker exec <c> curl -s -o /dev/null -w '%{http_code}\n' \
+  http://127.0.0.1:8080/api/dsh-skill-explorer/list -H 'Host: <public-host>' \
+  -H 'Origin: https://<public-host>'    # expect 200 (stock image: 400)
 
 ## 4. Standalone usage (any host)
 
@@ -304,6 +337,10 @@ files changed).
   (`set -e` + captured stderr → no logs).
 - **execve EPERM under empty bounding set** = file-capability signature
   (sh/node exec fine, caddy fails).
+- **Plugin `/api` routes 400 (empty body) through Caddy** = DSH
+  loopback-Host validation vs. the Caddyfile's public `$DSH_UPSTREAM_HOST`
+  (fixed by fork patch 3; core routes are unaffected, so only plugins with
+  custom API routes show it).
 - **Tag suffix encodes the base variant**: `-olares` = workstation,
   `-olares-runtime` = runtime — even though the images are generic. Keep it.
 
