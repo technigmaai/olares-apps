@@ -300,8 +300,37 @@ olares-apps/
     MAINTENANCE.md        # <- this file
     DOCKER-IMAGE-UPDATE.md  # image-only runbook
     IMAGE-UPDATE.md         # image+chart runbook (pre-400-fix; superseded by this file for the fork)
+    tools/verify-compaction-policy.mjs  # compaction-policy verification harness
     deepseekharness-0.1.x.tgz  (gitignored; published as GitHub Releases)
   assets/icons/deepseekharness.png
 ```
 Packaged `.tgz` files are published as **GitHub Releases** (`technigmaai/olares-apps`),
 one per app/version; the repo itself does not commit the `.tgz`.
+
+---
+
+## 8. Tooling: verify-compaction-policy.mjs
+
+Verification harness for the tuned `compaction-basic` policy when the agent
+preset changed. It parses `standard-tuned` (deployment default), the local
+`olares` preset, and the shipped `standard` preset with the same YAML dialect
+DSH's cordis loader uses (`!!js`), instantiates the real
+`@deepseek-ai/dsh-compaction-basic` engine (its load-time validator rejects
+unknown keys, out-of-range ratios, duplicates, retain>=threshold) and then
+prices worst-case admission (conversation + recovery) per LLM route against the
+route's context window.
+
+**Where to run it:** inside the DSH container (paths `/opt/dsh/...` and
+`/data/dsh/...` are container-absolute). Upload the file to
+`drive/Data/deepseekharness/dsh/` (or use the CLI terminal) and run:
+
+```bash
+node verify-compaction-policy.mjs   # exit 0 + ALL CHECKS PASSED = good
+```
+
+It asserts (a) each preset loads and has an enabled `compaction-basic` row,
+(b) `resolveConfig` passes through the plugin itself, (c) both
+conversation and recovery admission stay under `contextWindow` for every
+route in `ROUTES`, (d) policy targets are unique, and (e) `settings.yaml`'s
+`agent-presets.default` exists and resolves. Update `ROUTES` if the LLM
+routes change. Not related to plugin-tree boot failures (see §5 for those).
