@@ -254,6 +254,37 @@ then restart the app. (Password-only changes are fine — the hash is overwritte
 | `market` op stuck (`uninstalling`/`upgrade`, "opID not found in response data") | Market backend wedged | `olares-cli cluster workload restart --kind deployment market-deployment -n os-framework --yes`; if still stuck, `olares-cli cluster workload restart --kind statefulset app-service -n os-framework --yes` (drives namespace teardown). Then `uninstall` → re-`upload` chart → `install` |
 | Username change crash-loops | caddy-security identity-store collision | Delete `drive/Data/deepseekharness/auth/users.json`, restart (§4) |
 | Plugin "does not provide an export / engine" error at boot | DSH version older than the plugin's required engine | Pick a base image whose DSH satisfies the plugin (§2 A1) |
+| Boot fails: `failed to import loader entry ... Cannot find package '@deepseek-ai/...' imported from /data/dsh/profiles/web/` | **A plugin install's `pnpm add` pruned a profile-local package** that `cordis.patch.yml` depends on (e.g. `@nanmicoder/dsh-agent-teams` pruned the logger-console package installed with `--no-save` earlier). Verify the package is either a REAL dependency in the profile's `package.json` or not referenced by the patch. | See the plugin-profile recovery below |
+
+### Plugin-profile recovery (no exec needed — files ops only)
+
+Experienced at `@nanmicoder/dsh-agent-teams@0.1.18` (its peerDeps only allow
+DSH `0.1.5-rc.1 || 0.1.2-rc.1 || 0.1.2-alpha.5 || 0.1.2-alpha.2` — NOT rc.2, so
+it is genuinely incompatible — and its install pruned a `--no-save`d
+`@deepseek-ai/cordis-plugin-logger-console` that the profile's log-capture
+patch row referenced):
+
+```bash
+# 1. Rewrite the profile package.json WITHOUT the offending plugin
+#    (keep the known-good deps+bundles; see the file in git history), then:
+olares-cli files rm -f drive/Data/deepseekharness/dsh/profiles/web/package.json
+olares-cli files upload /tmp/package.json good drive/Data/deepseekharness/dsh/profiles/web/package.json   # upload first removes name collision
+# 2. Reset the profile patch layer (drop any row that needs a missing package)
+printf '[]\n' > /tmp/patch.yml
+olares-cli files rm -f drive/Data/deepseekharness/dsh/profiles/web/cordis.patch.yml
+olares-cli files upload /tmp/patch.yml drive/Data/deepseekharness/dsh/profiles/web/cordis.patch.yml
+# 3. Remove the offending package's leftovers
+olares-cli files rm -rf drive/Data/deepseekharness/dsh/profiles/web/node_modules/@nanmicoder
+# 4. Restart the app; verify the launch token appears in the pod logs
+olares-cli market restart deepseekharness
+```
+
+**Restoring the log-capture patch row properly** (so it survives future pnpm
+runs): from the DSH CLI terminal (works while the app is up) run
+`pnpm add @deepseek-ai/cordis-plugin-logger-console@1.0.2` inside
+`/data/dsh/profiles/web` (adds it as a real dependency), then re-add the
+`logger-console` row to `cordis.patch.yml` (see the previous session's patch
+comments). Do this only when log capture is actually needed.
 
 **To inspect the live Caddy routing** (proves patch 3 is active):
 ```bash
