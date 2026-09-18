@@ -416,3 +416,4 @@ files changed).
 | `0.1.5-rc.1-olares` | 0.1.5-rc.1-workstation | 0.1.5-rc.1 | `adf9b065cbab…` |
 | `0.1.5-rc.2-olares` | 0.1.5-rc.2-workstation | 0.1.5-rc.2 | `b7d517d5057b…` |
 | `0.1.5-rc.2-olares-2` | 0.1.5-rc.2-workstation | 0.1.5-rc.2 | `cc550379c3c2…` (all 4 patches: entrypoint + setcap + Caddyfile all-routes loopback + autosave self-heal; fresh tag to bust the node digest cache) |
+| `0.1.6-alpha.2-olares-runtime` | 0.1.6-alpha.2 (**runtime-only release**) | 0.1.6-alpha.2 | `ecfd6edc4cdb…` (runtime variant: `apt-get install libcap2-bin` + `setcap -r /usr/bin/caddy` only; Caddyfile patch runs on **node**, not python3 — runtime base lacks python) |
