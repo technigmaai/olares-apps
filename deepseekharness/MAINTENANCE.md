@@ -19,13 +19,13 @@ Companion runbooks (same folder):
 | Item | Value |
 |---|---|
 | Olares app name | `deepseekharness` (folder/appid; **no hyphens allowed** — constraint `^[a-z0-9]{1,30}$`) |
-| Chart | `deepseekharness-0.1.7` (apiVersion v2, appVersion `0.1.5-rc.2`) |
-| OlaresManifest | `version 0.1.7`, `spec.versionName 0.1.5-rc.2` |
+| Chart | `deepseekharness-0.1.8` (apiVersion v2, appVersion `0.1.6-alpha.2`) |
+| OlaresManifest | `version 0.1.8`, `spec.versionName 0.1.6-alpha.2` |
 | Image repo | `docker.io/technigmaai/deepseek-harness` |
-| Image tag (live) | `0.1.5-rc.2-olares-2` |
-| Live image digest | `sha256:cc550379c3c250c09d6ebd8a3d277dba4ef639cc58891d50b5d7673d7ea9c38f` |
+| Image tag (live) | `0.1.6-alpha.2-olares` |
+| Live image digest | `sha256:a95fe1be36962d686cb2ba2b1c0dc101973b6c4c7f7b9f550c3d174d64a721d8` |
 | pullPolicy | `Always` |
-| DSH version in image | `0.1.5-rc.2` (from `moelin/deepseek-harness:0.1.5-rc.2-workstation`) |
+| DSH version in image | `0.1.6-alpha.2` (from `moelin/deepseek-harness:0.1.6-alpha.2-workstation`) |
 | Auth mode | `caddy-security` (AUTH_USERNAME=`technigmaai`, AUTH_PASSWORD=user secret, AUTH_TOKEN_LIFETIME=`2592000`) |
 | State (last checked) | `running` |
 
@@ -206,6 +206,16 @@ olares-cli market upload ./deepseekharness-0.1.(x+1).tgz
 ```bash
 olares-cli market upgrade deepseekharness -s upload --version 0.1.(x+1) --watch
 ```
+> ⚠️ **In-place `upgrade` does NOT apply chart-DEFAULT changes (e.g. a new
+> `image.tag` in `values.yaml`).** Olares re-applies the values stored at
+> install time, so the deployment spec keeps the OLD tag and the upgrade
+> "succeeds" while pods never roll. When the image tag changed: verify the
+> deployment spec (`cluster workload yaml --kind deployment ... | grep
+> image:`); if stale, **uninstall + install** the new version (storage in
+> `Data/deepseekharness` survives: plugins, sessions, auth, skills all
+> persist — this was re-verified on the 0.1.8 upgrade). Re-supply the
+> `--env` values on install (see below). Template changes that don't come
+> from values (new sidecar, mount path) DO roll in-place.
 If the app is **not in an upgradable state** (`running`/`stopped`/`upgradeFailed`
 are OK; `installing`/`initializing`/`uninstalling` are not), you may need to let
 the in-flight op finish or do `uninstall` then `install`:

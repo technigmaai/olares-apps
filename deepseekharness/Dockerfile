@@ -16,21 +16,18 @@
 #   4. (in entrypoint-olares.sh) removes the persisted Caddy autosave at boot
 #      so the image's Caddyfile is always authoritative.
 #
-# CURRENT BASE: runtime variant — upstream 0.1.6-alpha.2 shipped runtime-only
-# (no -workstation tag). Runtime bases lack getcap/setcap and python3, so:
-# libcap2-bin is installed for setcap, only /usr/bin/caddy is stripped
-# (no mtr-packet on runtime bases), and the Caddyfile patch runs on node
-# (present in every DSH image; python3 is workstation-only).
+# CURRENT BASE: workstation variant. (When upstream ships a release
+# runtime-only, the runtime-base fork needs two deltas: `apt-get install
+# libcap2-bin` before setcap, and stripping only /usr/bin/caddy — no
+# mtr-packet there. The node-based Caddyfile patch below works on BOTH base
+# kinds — runtime images lack python3, so node is the portable choice.)
 #
-# TAG NAMING: workstation base -> `<ver>-olares`; runtime base ->
-# `<ver>-olares-runtime` (this file). See DOCKER-IMAGE-UPDATE.md /
-# MAINTENANCE.md for the full update workflow.
-FROM docker.io/moelin/deepseek-harness:0.1.6-alpha.2
+# TAG NAMING: workstation base -> `<ver>-olares` (this file); runtime base ->
+# `<ver>-olares-runtime`. See DOCKER-IMAGE-UPDATE.md / MAINTENANCE.md for the
+# full update workflow.
+FROM docker.io/moelin/deepseek-harness:0.1.6-alpha.2-workstation
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends libcap2-bin \
-    && setcap -r /usr/bin/caddy \
-    && rm -rf /var/lib/apt/lists/*
+RUN setcap -r /usr/bin/caddy -r /usr/bin/mtr-packet
 
 COPY entrypoint-olares.sh /usr/local/bin/entrypoint.sh
 
