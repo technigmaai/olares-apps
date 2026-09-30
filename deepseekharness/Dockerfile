@@ -25,7 +25,7 @@
 # TAG NAMING: workstation base -> `<ver>-olares` (this file); runtime base ->
 # `<ver>-olares-runtime`. See DOCKER-IMAGE-UPDATE.md / MAINTENANCE.md for the
 # full update workflow.
-FROM docker.io/moelin/deepseek-harness:0.1.6-alpha.2-workstation
+FROM docker.io/moelin/deepseek-harness:0.2.0-rc.2-workstation
 
 RUN setcap -r /usr/bin/caddy -r /usr/bin/mtr-packet
 

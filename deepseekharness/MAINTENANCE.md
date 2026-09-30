@@ -19,13 +19,13 @@ Companion runbooks (same folder):
 | Item | Value |
 |---|---|
 | Olares app name | `deepseekharness` (folder/appid; **no hyphens allowed** — constraint `^[a-z0-9]{1,30}$`) |
-| Chart | `deepseekharness-0.1.8` (apiVersion v2, appVersion `0.1.6-alpha.2`) |
-| OlaresManifest | `version 0.1.8`, `spec.versionName 0.1.6-alpha.2` |
+| Chart | `deepseekharness-0.1.10` (apiVersion v2, appVersion `0.2.0-rc.2`) |
+| OlaresManifest | `version 0.1.10`, `spec.versionName 0.2.0-rc.2` |
 | Image repo | `docker.io/technigmaai/deepseek-harness` |
-| Image tag (live) | `0.1.6-alpha.2-olares` |
-| Live image digest | `sha256:a95fe1be36962d686cb2ba2b1c0dc101973b6c4c7f7b9f550c3d174d64a721d8` |
+| Image tag (live) | `0.2.0-rc.2-olares` |
+| Live image digest | `sha256:1b5f7331ea7cda8f2e4cebbec7ab8b1288aabf56bf420f6a5dc71f53302f6ac4` |
 | pullPolicy | `Always` |
-| DSH version in image | `0.1.6-alpha.2` (from `moelin/deepseek-harness:0.1.6-alpha.2-workstation`) |
+| DSH version in image | `0.2.0-rc.2` (from `moelin/deepseek-harness:0.2.0-rc.2-workstation`) |
 | Auth mode | `caddy-security` (AUTH_USERNAME=`technigmaai`, AUTH_PASSWORD=user secret, AUTH_TOKEN_LIFETIME=`2592000`) |
 | State (last checked) | `running` |
 
@@ -41,11 +41,31 @@ An `initContainer` (`beclab/aboveos-busybox`, root) runs
 `capabilities.drop: [ALL]`, `allowPrivilegeEscalation: false`).
 
 **Installed plugins** (persisted in `/data/dsh/profiles/web/package.json`,
-survive reinstalls because `/data` is on appData):
-- `@linxin666/dsh-client-ui-skill-explorer` (Skill Center panel — **requires DSH >= 0.1.5-rc.1**)
-- `dsh-at-mention` (@ file/session mentions)
-- `dsh-session-recycle-bin` (github:technigmaai/...)
-- `dshmarket`
+survive reinstalls because `/data` is on appData). Status on DSH 0.2.0-rc.2:
+- `@linxin666/dsh-client-ui-skill-explorer` — loads (engine >=0.1.5-rc.1)
+- `dsh-at-mention` — loads (peer ranges are install-time enforced by the new
+  0.2.x plugin-manager compat gate; already-present bundles load fine)
+- `dsh-session-recycle-bin` (github:technigmaai/...) — loads
+- `dshmarket` @1.47.0 — **SKIPPED** at boot (peer `dsh-settings ^0.1.x` vs
+  runtime 0.2.x). Re-enable: `dsh plugin allow-version dshmarket@1.47.0` in
+  the DeepSeek Harness CLI terminal + restart, or wait for an author update.
+- `dsh-plugin-comfyui` @0.1.0 — **SKIPPED** (same dsh-settings peer gap) —
+  same remedy as dshmarket.
+
+> **0.2.x compat gate:** the plugin manager now refuses *installs* of plugins
+> whose peer ranges don't match the runtime, and at boot *skips* (does not
+> crash on) incompatible bundles — the guard that would have prevented the
+> `dsh-at-file`/`agent-teams` crashes. Skips are logged as
+> `dsh: skipping profile bundle "<name>"`.
+
+> **Mesh sidecars (platform change ~late Sep 2026):** Olares now injects
+> `linkerd-proxy` + `olares-mesh-in-agent` into app pods and a non-default
+> uid; the DSH pod is 3/3, the terminal pod 4/4. The terminal image's nginx
+> needs root → chart 0.1.10 pins `runAsUser: 0` on the nginx container
+> (beclab/* is OPA-trusted). Without it: nginx CrashLoopBackOff
+> (`mkdir() "/var/cache/nginx/client_temp" failed (13)`), app stuck in
+> `initializing`, and `upgrade` blocked from `initializing` → use
+> uninstall+install.
 
 **Commands you will use** (from the session host; `olares-cli` is on PATH):
 ```bash
