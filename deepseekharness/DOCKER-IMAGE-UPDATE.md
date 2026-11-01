@@ -9,8 +9,9 @@ chart; for that side see [IMAGE-UPDATE.md](./IMAGE-UPDATE.md) Part 4.)
 > **Picking this up next time?** Start with
 > [MAINTENANCE.md](./MAINTENANCE.md) — the canonical state-of-the-world +
 > new-container + package-upgrade guide (exact live values, all 4 fork
-> patches, the traps, and the verification checklist). This file is the
-> image-build runbook it references.
+> patches, the traps, and the verification checklist). For a zero-context
+> image-build handoff, use [CONTAINER-HANDOFF.md](./CONTAINER-HANDOFF.md);
+> this file is the image-only runbook.
 
 A fresh agent session can run this with no other context. Workdir: this
 folder (holds the `Dockerfile` + `entrypoint-olares.sh` of the last

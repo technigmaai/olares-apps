@@ -8,7 +8,9 @@ exact commands, the traps that actually bit us, and the verification checklist
 that proves it works.
 
 Companion runbooks (same folder):
-- `DOCKER-IMAGE-UPDATE.md` — docker-image-only update (slim)
+- `CONTAINER-HANDOFF.md` — **handoff for building the Docker image**
+  (self-contained, zero-context; start here for image work)
+- `DOCKER-IMAGE-UPDATE.md` — docker-image-only update (slim runbook + build history)
 - `IMAGE-UPDATE.md` — image + chart full runbook (older; this file supersedes
   its "what the fork changes" section — read this first)
 
@@ -359,7 +361,8 @@ olares-apps/
     Dockerfile            # the 4-patch fork build
     entrypoint-olares.sh  # gosu->APP_RUNNER patch + Caddy autosave self-heal
     MAINTENANCE.md        # <- this file
-    DOCKER-IMAGE-UPDATE.md  # image-only runbook
+    CONTAINER-HANDOFF.md  # zero-context handoff for building the image
+    DOCKER-IMAGE-UPDATE.md  # image-only runbook + build history
     IMAGE-UPDATE.md         # image+chart runbook (pre-400-fix; superseded by this file for the fork)
     tools/verify-compaction-policy.mjs  # compaction-policy verification harness
     deepseekharness-0.1.x.tgz  (gitignored; published as GitHub Releases)
